@@ -90,14 +90,14 @@ test("real HTTPS origins enforce CORS and reject a missing content type", async 
   assert.match((await invoke(page, { url: target + "/no-type" })).error, /UNSUPPORTED_TYPE/);
 });
 
-test("caps the excerpt at 4000 characters and marks truncation", async t => {
+test("caps the excerpt at 8000 characters and marks truncation", async t => {
   const page = await session(t);
   await reply(page, `<article><p>${article.repeat(50)}</p></article>`);
   const { result } = await invoke(page);
   assert.match(result, /Excerpt truncated: yes/);
   const excerpt = result.split("BEGIN UNTRUSTED PAGE TEXT\n")[1].split("\nEND UNTRUSTED PAGE TEXT")[0];
-  assert.equal(excerpt.length, 4000);
-  assert.match(result, /Batch character budget: 4000 \(not tokens\)/);
+  assert.equal(excerpt.length, 8000);
+  assert.match(result, /Excerpt character limit: 8000 \(not tokens\)/);
   const counts = /Excerpt characters: (\d+) \/ (\d+) extracted \(not a token count\)/.exec(result);
   assert.equal(Number(counts[1]), excerpt.length);
   assert.ok(Number(counts[2]) > excerpt.length);
@@ -235,156 +235,54 @@ test("an unsupported encoding is reported without locking the response stream", 
   assert.equal(await page.evaluate(() => window.responseBody.locked), false);
 });
 
-function batchInfo(value) {
-  assert.ok(value.result, JSON.stringify(value));
-  return {
-    id: /Document ID: ([a-f0-9]{32})/.exec(value.result)?.[1],
-    next: /Next offset: (\d+|none)/.exec(value.result)?.[1],
-    text: value.result.split("BEGIN UNTRUSTED PAGE TEXT\n")[1]?.split("\nEND UNTRUSTED PAGE TEXT")[0]
-  };
-}
-
-test("a caller can request a larger batch without changing the skill", async t => {
+test("single-excerpt retrieval works without accessing device or WebView storage", async t => {
   const page = await session(t);
-  await reply(page, `<article>${article.repeat(60)}</article>`);
-  const value = await invoke(page, { url: "https://public.test/article", max_chars: 8000 });
-  const batch = batchInfo(value);
-  assert.equal(batch.text.length, 8000);
-  assert.match(value.result, /Batch character budget: 8000 \(not tokens\)/);
-  assert.equal(batch.next, "8000");
-  assert.match(value.result, /not a token count/);
+  await reply(page, `<article>${article}</article>`);
+  await page.evaluate(() => {
+    window.storageReads = 0;
+    for (const key of ["sessionStorage", "localStorage", "indexedDB"]) {
+      Object.defineProperty(window, key, { configurable: true, get() {
+        window.storageReads++;
+        throw new DOMException("Storage disabled", "SecurityError");
+      } });
+    }
+  });
+  const { result } = await invoke(page);
+  assert.ok(result.includes(article));
+  assert.match(result, /Excerpt character limit: 8000 \(not tokens\)/);
+  assert.doesNotMatch(result, /Document ID:|Next offset:|Temporary cache:|Batch range:/);
+  assert.equal(await page.evaluate(() => window.storageReads), 0);
 });
 
-test("cached batches survive runner reload and can be read offline without refetching", async t => {
+test("old read/clear actions are rejected without fetching or inventing continuation", async t => {
   const page = await session(t);
   let requests = 0;
-  const text = article.repeat(5);
-  await page.route("https://public.test/**", route => {
-    requests++;
-    return route.fulfill({ contentType: "text/html", headers: { "access-control-allow-origin": "*" }, body: `<article>${text}</article>` });
-  });
-  let batch = batchInfo(await invoke(page, { url: "https://public.test/article", max_chars: 256 }));
-  const id = batch.id;
-  assert.ok(id);
-  const chunks = [batch.text];
-  await page.reload();
-  await page.context().setOffline(true);
-  while (batch.next !== "none") {
-    const previous = Number(batch.next);
-    batch = batchInfo(await invoke(page, { action: "read", document_id: id, offset: previous, max_chars: 256 }));
-    assert.equal(batch.id, id);
-    assert.ok(batch.next === "none" || Number(batch.next) > previous);
-    chunks.push(batch.text);
-    assert.ok(chunks.length < 10, "the cursor must reach the end");
+  await page.route("https://public.test/**", route => { requests++; return route.abort(); });
+  for (const action of ["read", "clear"]) {
+    const { error, result } = await invoke(page, { action, url: "https://public.test/article" });
+    assert.match(error, /UNSUPPORTED_ACTION/);
+    assert.equal(result, undefined);
   }
-  assert.equal(chunks.join(""), text);
-  assert.equal(requests, 1);
+  assert.equal(requests, 0);
 });
 
-test("an expired cache is rejected and removed", async t => {
-  const page = await session(t);
-  await reply(page, `<article>${article.repeat(5)}</article>`);
-  const first = batchInfo(await invoke(page));
-  await page.evaluate(() => {
-    const key = "ai-edge-gallery:read-and-explain:temporary:v1";
-    const entry = JSON.parse(sessionStorage.getItem(key));
-    entry.expiresAt = Date.now() - 1;
-    sessionStorage.setItem(key, JSON.stringify(entry));
-  });
-  assert.match((await invoke(page, { action: "read", document_id: first.id, offset: Number(first.next) })).error, /CACHE_EXPIRED/);
-  assert.equal(await page.evaluate(() => sessionStorage.getItem("ai-edge-gallery:read-and-explain:temporary:v1")), null);
-});
-
-test("unavailable temporary storage preserves the fetched batch and reports the limitation", async t => {
-  const page = await session(t);
-  await reply(page, `<article>${article.repeat(5)}</article>`);
-  await page.evaluate(() => Object.defineProperty(window, "sessionStorage", {
-    configurable: true, get() { throw new DOMException("Blocked storage", "SecurityError"); }
-  }));
-  const value = await invoke(page);
-  assert.match(value.result, /Temporary cache: unavailable/);
-  assert.doesNotMatch(value.result, /Document ID:/);
-  assert.match(value.result, /Next offset: none/);
-  assert.ok(batchInfo(value).text.includes(article));
-  assert.match((await invoke(page, { action: "read", document_id: "f".repeat(32), offset: 0 })).error, /CACHE_UNAVAILABLE/);
-});
-
-test("clear requires the matching document ID and prevents subsequent reads", async t => {
-  const page = await session(t);
-  await reply(page, `<article>${article.repeat(5)}</article>`);
-  const first = batchInfo(await invoke(page));
-  assert.match((await invoke(page, { action: "clear", document_id: "0".repeat(32) })).error, /CACHE_MISS/);
-  assert.ok((await invoke(page, { action: "read", document_id: first.id, offset: 0 })).result);
-  assert.match((await invoke(page, { action: "clear", document_id: first.id })).result, /cache cleared/);
-  assert.match((await invoke(page, { action: "read", document_id: first.id, offset: 0 })).error, /CACHE_MISS/);
-});
-
-test("a failed fresh fetch invalidates the previous cached snapshot", async t => {
-  const page = await session(t);
-  await reply(page, `<article>${article.repeat(5)}</article>`);
-  const first = batchInfo(await invoke(page));
-  await page.route("https://public.test/**", route => route.abort("failed"));
-  assert.match((await invoke(page)).error, /FETCH_FAILED/);
-  assert.match((await invoke(page, { action: "read", document_id: first.id, offset: 0 })).error, /CACHE_MISS/);
-});
-
-test("batch budgets and offsets must be valid integers", async t => {
-  const page = await session(t);
-  await reply(page, `<article>${article.repeat(5)}</article>`);
-  for (const max_chars of [0, -1, 255, 524289, "400-4000", "4e3", false, 256.5]) {
-    assert.match((await invoke(page, { url: "https://public.test/article", max_chars })).error, /INVALID_INPUT/);
-  }
-  const first = batchInfo(await invoke(page));
-  for (const offset of [-1, 1000000, "4000", 0.5]) {
-    assert.match((await invoke(page, { action: "read", document_id: first.id, offset })).error, /INVALID_OFFSET/);
-  }
-  assert.match((await invoke(page, { action: "unsupported" })).error, /INVALID_INPUT/);
-});
-
-test("batch cursors preserve a Unicode character across the boundary", async t => {
-  const page = await session(t);
-  const text = "a".repeat(255) + "🌱" + article;
-  await reply(page, `<article>${text}</article>`);
-  const first = batchInfo(await invoke(page, { url: "https://public.test/article", max_chars: 256 }));
-  assert.equal(first.text.length, 255);
-  assert.equal(first.next, "255");
-  const second = batchInfo(await invoke(page, { action: "read", document_id: first.id, offset: 255, max_chars: 256 }));
-  assert.equal(first.text + second.text, text);
-  assert.match((await invoke(page, { action: "read", document_id: first.id, offset: 256 })).error, /INVALID_OFFSET/);
-});
-
-test("optional budget null/empty values use the default and integer strings are normalized", async t => {
+test("legacy optional max_chars fields cannot reintroduce the 4000-character limit", async t => {
   const page = await session(t);
   await reply(page, `<article>${article.repeat(60)}</article>`);
-  for (const max_chars of [null, "", "  "]) {
-    assert.match((await invoke(page, { url: "https://public.test/article", max_chars })).result, /Batch character budget: 4000 \(not tokens\)/);
+  for (const max_chars of [4000, null, "", "400-4000"]) {
+    const { result } = await invoke(page, { url: "https://public.test/article", max_chars });
+    const excerpt = result.split("BEGIN UNTRUSTED PAGE TEXT\n")[1].split("\nEND UNTRUSTED PAGE TEXT")[0];
+    assert.equal(excerpt.length, 8000);
+    assert.match(result, /Excerpt character limit: 8000 \(not tokens\)/);
   }
-  assert.match((await invoke(page, { url: "https://public.test/article", max_chars: "8000" })).result, /Batch character budget: 8000 \(not tokens\)/);
 });
 
-test("continue by matching URL advances the stored cursor without an ID or guessed offset", async t => {
+test("the 8000-character cap does not split a Unicode surrogate pair", async t => {
   const page = await session(t);
-  const text = article.repeat(5);
-  await reply(page, `<article>${text}</article>`);
-  let value = await invoke(page, { url: "https://public.test/article", max_chars: 256 });
-  const chunks = [batchInfo(value).text];
-  await page.reload();
-  await page.context().setOffline(true);
-  while (batchInfo(value).next !== "none") {
-    value = await invoke(page, { action: "read", url: "https://public.test/article", max_chars: 256 });
-    chunks.push(batchInfo(value).text);
-    assert.ok(chunks.length < 10);
-  }
-  assert.equal(chunks.join(""), text);
-  assert.match((await invoke(page, { action: "read", url: "https://public.test/article" })).error, /END_OF_DOCUMENT/);
-});
-
-test("URL continuation never substitutes a different cached page", async t => {
-  const page = await session(t);
-  await reply(page, `<article>${article.repeat(5)}</article>`);
-  await invoke(page);
-  assert.match((await invoke(page, { action: "read", url: "https://public.test/different" })).error, /CACHE_MISS/);
-  assert.match((await invoke(page, { action: "read", offset: 40 })).error, /INVALID_INPUT/);
-  assert.match((await invoke(page, { action: "clear", url: "https://public.test/article" })).result, /cache cleared/);
-  assert.match((await invoke(page, { action: "read", url: "https://public.test/article" })).error, /CACHE_MISS/);
+  await reply(page, `<article>${"a".repeat(7999)}🌱${article}</article>`);
+  const { result } = await invoke(page);
+  const excerpt = result.split("BEGIN UNTRUSTED PAGE TEXT\n")[1].split("\nEND UNTRUSTED PAGE TEXT")[0];
+  assert.equal(excerpt.length, 7999);
+  assert.match(result, /Excerpt truncated: yes/);
+  assert.doesNotMatch(excerpt, /[\uD800-\uDBFF]$/);
 });

@@ -84,3 +84,14 @@ skill loader, speech controls, WebView settings, native actions, or MCP support.
 
 No Android app, iOS app, simulator, on-device model, native intent, or MCP
 integration was executed during local validation.
+
+## Native file-storage boundary
+
+The public skill contract documents a hidden JavaScript WebView entry point
+and predefined native actions. It does not establish a native iOS file-writing
+bridge available to this skill. The earlier sessionStorage cache was already
+on-device WebView storage; replacing it with a native temporary file would
+need app capabilities not verified here. After the user reported batch/cache
+failure, the implementation therefore takes the requested fallback: one
+8,000-character excerpt, with no storage or file-writing dependency. This is
+not a claim that iOS generally cannot save files.

@@ -1,5 +1,9 @@
 # User-published hosting verification
 
+**Historical hosting checks.** The current local revision uses one excerpt of
+up to 8,000 characters and removes batching/caching. It has not been deployed
+by the assistant; earlier cached-runner observations below do not validate it.
+
 Read-only verification on 2026-10-30. The user published the prepared files;
 the assistant did not push, upload, configure hosting, or deploy changes.
 

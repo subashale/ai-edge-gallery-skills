@@ -1,5 +1,9 @@
 # Local test record — 2026-10-30
 
+**Current implementation: single excerpt, fixed 8,000-character limit, no
+batching or caching. Latest result: 21 tests passed, 0 failed.** Earlier batch
+sections below are historical experiments, not features of the current skill.
+
 **Measured scope: macOS desktop Chrome, not Gallery or iOS.**
 No Android device test was used to infer iOS support. No on-device model or
 speech engine was run locally.
@@ -195,3 +199,35 @@ offline with only `action: read` and the matching URL. Ranges advanced from
 succeeded, and another read returned CACHE_MISS. The local-only record is
 `test-results/continue-live.json`. No model was run in these desktop tests;
 Gemma's compliance and iPhone storage persistence still require validation.
+
+## User-requested single-excerpt fallback
+
+The user reported that batching/caching did not work in Gallery on the iPhone
+and requested native device-file storage if supported, otherwise a return to
+one excerpt with the limit increased from 4,000 to 8,000 characters. The public
+skill contract and available source did not establish a supported native iOS
+file-writing bridge. No native-file cache was implemented or tested.
+
+The current implementation removes WebView storage, cursors, document IDs,
+batch actions, and configurable max_chars. It accepts one URL, fetches with
+`cache: no-store`, extracts text, and returns at most 8,000 UTF-16 code units
+with source, counts, truncation, and stage-specific errors. Legacy read/clear
+calls fail explicitly. Legacy extra budget fields cannot restore the old
+4,000-character cap.
+
+The current suite passed **21 browser tests, 0 failed**: the 17 applicable
+reader checks were retained, the withdrawn batch tests removed, and four
+checks added for storage independence, unsupported continuation, legacy-field
+handling, and Unicode boundaries at the 8,000-character cap.
+
+Live desktop Chrome 156.0.8078.74 probes of the revised local source returned:
+
+| URL | Returned excerpt characters | Truncated | Declared character limit |
+| --- | --- | --- | --- |
+| `https://httpbin.org/html` | 3,594 | No | 8,000 |
+| `https://subashale.com.np/` | 6,761 | No | 8,000 |
+
+The raw report is local-only at `test-results/live.json`, recorded
+2026-10-30T20:50:19.402Z. No on-device model was run. The simplified revision
+still requires a fresh iPhone test after replacement of both skill files and
+starting a new chat. No updated version was published by the assistant.
