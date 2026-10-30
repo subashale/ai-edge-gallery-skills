@@ -331,11 +331,11 @@ test("a failed fresh fetch invalidates the previous cached snapshot", async t =>
 test("batch budgets and offsets must be valid integers", async t => {
   const page = await session(t);
   await reply(page, `<article>${article.repeat(5)}</article>`);
-  for (const max_chars of [0, -1, 255, 524289, "8000", null, 256.5]) {
+  for (const max_chars of [0, -1, 255, 524289, "400-4000", "4e3", false, 256.5]) {
     assert.match((await invoke(page, { url: "https://public.test/article", max_chars })).error, /INVALID_INPUT/);
   }
   const first = batchInfo(await invoke(page));
-  for (const offset of [-1, 1000000, "4000", 0.5, null]) {
+  for (const offset of [-1, 1000000, "4000", 0.5]) {
     assert.match((await invoke(page, { action: "read", document_id: first.id, offset })).error, /INVALID_OFFSET/);
   }
   assert.match((await invoke(page, { action: "unsupported" })).error, /INVALID_INPUT/);
@@ -351,4 +351,40 @@ test("batch cursors preserve a Unicode character across the boundary", async t =
   const second = batchInfo(await invoke(page, { action: "read", document_id: first.id, offset: 255, max_chars: 256 }));
   assert.equal(first.text + second.text, text);
   assert.match((await invoke(page, { action: "read", document_id: first.id, offset: 256 })).error, /INVALID_OFFSET/);
+});
+
+test("optional budget null/empty values use the default and integer strings are normalized", async t => {
+  const page = await session(t);
+  await reply(page, `<article>${article.repeat(60)}</article>`);
+  for (const max_chars of [null, "", "  "]) {
+    assert.match((await invoke(page, { url: "https://public.test/article", max_chars })).result, /Batch character budget: 4000 \(not tokens\)/);
+  }
+  assert.match((await invoke(page, { url: "https://public.test/article", max_chars: "8000" })).result, /Batch character budget: 8000 \(not tokens\)/);
+});
+
+test("continue by matching URL advances the stored cursor without an ID or guessed offset", async t => {
+  const page = await session(t);
+  const text = article.repeat(5);
+  await reply(page, `<article>${text}</article>`);
+  let value = await invoke(page, { url: "https://public.test/article", max_chars: 256 });
+  const chunks = [batchInfo(value).text];
+  await page.reload();
+  await page.context().setOffline(true);
+  while (batchInfo(value).next !== "none") {
+    value = await invoke(page, { action: "read", url: "https://public.test/article", max_chars: 256 });
+    chunks.push(batchInfo(value).text);
+    assert.ok(chunks.length < 10);
+  }
+  assert.equal(chunks.join(""), text);
+  assert.match((await invoke(page, { action: "read", url: "https://public.test/article" })).error, /END_OF_DOCUMENT/);
+});
+
+test("URL continuation never substitutes a different cached page", async t => {
+  const page = await session(t);
+  await reply(page, `<article>${article.repeat(5)}</article>`);
+  await invoke(page);
+  assert.match((await invoke(page, { action: "read", url: "https://public.test/different" })).error, /CACHE_MISS/);
+  assert.match((await invoke(page, { action: "read", offset: 40 })).error, /INVALID_INPUT/);
+  assert.match((await invoke(page, { action: "clear", url: "https://public.test/article" })).result, /cache cleared/);
+  assert.match((await invoke(page, { action: "read", url: "https://public.test/article" })).error, /CACHE_MISS/);
 });

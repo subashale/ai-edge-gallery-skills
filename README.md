@@ -62,16 +62,19 @@ The same `run_js` script supports three actions in its JSON `data` argument:
 
 - `fetch`: supply `url` and optional `max_chars`. The script fetches and extracts
   the page, caches one snapshot in `sessionStorage`, and returns the first batch.
-- `read`: supply the returned `document_id`, integer `offset` copied from
-  Next offset, and optional `max_chars`. This reads the same snapshot without
-  another network request. Stop when Next offset is `none`.
-- `clear`: supply `document_id` to remove the cached snapshot.
+- `read`: supply the same `url` and optional `max_chars`. The script checks the
+  cached page identity and advances its stored cursor, without another network
+  request. No ID or guessed offset is needed. Stop at END_OF_DOCUMENT.
+- `clear`: supply that `url` to remove the snapshot when the user asks to discard
+  it. Exact document IDs and explicit offsets remain supported for direct calls.
 
 The old `{ "url": "https://example.org/article" }` input still works: it defaults
 to fetch with a 4,000-character batch. `max_chars` may be 256–524288; this is an
 output-size request within the resource limit, not proof it fits the selected
 model. Use the default when available context is unknown, or an explicit
 budget supplied by the caller. No model-specific context size is hardcoded.
+Missing, null, or empty optional budgets use the default. Unambiguous integer
+strings are normalized; ranges, fractional values, and invalid sizes are rejected.
 
 To change the default itself, edit `DEFAULT_MAX_CHARS` near the top of
 `skills/read-and-explain/scripts/index.html`. The skill instructions tell the
@@ -87,6 +90,14 @@ explicit clear action. A timer removes it while the runner is alive; expiry is
 also checked on reads. Immediate physical erasure while the WebView is closed
 or suspended is not guaranteed. There is no persistent-storage fallback.
 Starting another fetch discards the earlier snapshot, even if retrieval fails.
+The skill now keeps the snapshot after an answer so the user can say continue.
+Earlier instructions cleared it before answering; that policy was unsuitable
+for continuation in a later user turn and has been removed.
+
+For a budget-verification request, the model is instructed to quote the actual
+`Batch character budget` line, not a range or a statement inferred from parameter
+limits. A model's claim of success without the underlying tool result remains
+insufficient evidence that retrieval or validation succeeded.
 
 If storage is blocked, the fetched first batch still works and reports that
 further reads are unavailable. If the app recreates or isolates its WebView,

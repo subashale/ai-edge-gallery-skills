@@ -149,7 +149,7 @@ resolve the previously reported iPhone failure. No updated source or new
 
 ## Temporary cached batches
 
-The current batch-reading implementation passed **25 browser tests, 0 failed**.
+The initial batch-reading implementation passed **25 browser tests, 0 failed**.
 The eight additional checks cover configurable larger batches, runner reload
 and offline reads, cache expiry, unavailable storage, matching-ID clearing,
 invalidation after a failed new fetch, input validation, and Unicode-safe cursors.
@@ -165,3 +165,33 @@ iOS WebView storage persistence or Gemma's ability to choose batch sizes,
 advance cursors, clear the snapshot, or manage its conversation context.
 Those checks are in the device procedure. Temporary caching does not remove
 previous batches from the model's retained chat history.
+
+## Continuation and optional-input correction
+
+The user reported a model reply with an invalid max_chars attempt followed by
+a claimed budget of “400-4000”, then a failed continuation that guessed offset
+40 without the required document ID. Raw tool arguments/results were not
+provided, so neither the parameter cause nor the claimed retrieval success was
+independently established. The published files were checked and matched the
+local version, with a 4,000-character default and a scalar budget output.
+
+The previous instructions also requested cache clearing before the final
+answer. That policy was changed so the user can continue in a later turn:
+keep the snapshot until expiry, replacement, or explicit user-requested clear.
+`read` and `clear` now accept the page URL. The script verifies it against the
+cached snapshot and handles the continuation cursor itself. An unmatched URL
+never substitutes another page. Old cache records without the new cursor
+schema require a fresh fetch.
+
+Missing/null/empty max_chars uses the default; digit-only integer strings are
+normalized. Ambiguous ranges and invalid sizes still fail. Metadata requests
+must quote the actual returned fields rather than inventing a range.
+
+The current suite passed **28 browser tests, 0 failed**. A live desktop Chrome
+test downloaded the user's page once, returned the exact budget line
+`Batch character budget: 4000 (not tokens)`, reloaded the runner, and continued
+offline with only `action: read` and the matching URL. Ranges advanced from
+0–4000 to 4000–6761. A subsequent read returned END_OF_DOCUMENT; explicit clear
+succeeded, and another read returned CACHE_MISS. The local-only record is
+`test-results/continue-live.json`. No model was run in these desktop tests;
+Gemma's compliance and iPhone storage persistence still require validation.

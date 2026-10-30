@@ -11,7 +11,7 @@
 | Displayed app Max tokens setting | 32,000 — user observed in Gallery settings |
 | Current occupied/remaining context tokens | Not included in the reported stats; no skill-accessible counter verified |
 | Reported performance stats | 11 tok/s; TTFT 7000 ms; prefill 215 tok/s; RAM 3.6 and 65% as reported |
-| Cached-batch phone test | Not yet attempted — user confirmed |
+| Cached-batch phone test | Attempted continuation; model reported missing document_id and guessed offset 40; raw tool calls unavailable |
 | Available Agent Skills import options | Both Load skill from URL and local import — user confirmed |
 | Recognition engine/language | Pending |
 | Playback voice/language | Pending |
@@ -33,6 +33,15 @@ counts from these performance numbers.
 | --- | --- |
 | `https://httpbin.org/html` | Worked in the same Agent Skills session |
 | `https://subashale.com.np/` | Generic retrieval failure mentioning CORS, connectivity, TLS, redirects, or WebView policy |
+| Budget verification | Model reported invalid max_chars, then claimed success and a budget of “400-4000”; no raw result supplied, so the actual budget/result is unverified |
+
+The subsequent model reply to “continue” reported a missing document ID, guessed
+an offset of 40, and stopped. The earlier skill instructions also asked it to
+clear the snapshot before answering, a policy flaw for continuation across user
+turns. Whether clear was actually called on the phone is unknown. The current
+local update keeps the snapshot and makes `read` work by URL and stored cursor;
+it still needs a phone retry. The model is explicitly told not to invent IDs,
+offsets, budget ranges, or successful retrieval claims.
 
 The user explicitly confirmed supplying HTTPS for the failed site. An HTTP
 validation rejection is therefore not the explanation for that phone result.
@@ -48,7 +57,7 @@ body/extraction errors. Do not diagnose CORS solely from that message.
 
 A local diagnostic update separates `fetch`, `read`, and `extract` failures and
 includes the original browser error and runner origin. It passed 16 desktop
-tests at that stage. The current cached-batch version passed 25 local browser
+tests at that stage. The current cached-batch version passed 28 local browser
 tests; it also provides configurable batches, counts, temporary storage, and
 read/clear actions. It is packaged but has not been published. After the user publishes
 the update, refresh/re-add the skill if needed, retry the same HTTPS URL, and
@@ -112,9 +121,9 @@ it does not retrieve or summarize the target webpages.
 | CORS/access failure | Try a URL that fails on this device; example.org failed locally in desktop Chrome | An error is shown and no invented summary is given; do not presume identical CORS behavior on iOS |
 | Offline failure | In a fresh session, disable connectivity and request a new URL | Retrieval error; no reused content or pretend successful retrieval |
 | Context limit | Use a long readable page | Tool marks the excerpt truncated and answer says it read only part |
-| Cached batch read | Fetch a readable page, then request its next batch with the exact Document ID and Next offset | Same source/retrieval time; offset advances; no silent fresh fetch |
+| Cached batch read | Fetch a readable page, then call read with the same URL, omitting document_id and offset | Same source/retrieval time; script advances its stored cursor; no silent fresh fetch |
 | Cache persistence | Repeat a read after Gallery reloads the runner; disconnect after fetching if practical | Cached read succeeds, or explicit CACHE_MISS/CACHE_UNAVAILABLE; do not infer iOS support from desktop results |
-| Cache release | Use clear with the returned Document ID, then attempt read | Cache-cleared confirmation followed by CACHE_MISS |
+| Cache release | Ask to discard the snapshot; use clear with the same URL, then attempt read | Cache-cleared confirmation followed by CACHE_MISS; no automatic clear before an ordinary answer |
 | Loop behavior | Ask for broader coverage of a long page | Model advances offsets, stops appropriately, and describes partial coverage; token accumulation is measured separately |
 | Voice input | In Agent Skills, paste the URL, then use its microphone to dictate the request; inspect recognized text before sending | Correct transcript and the same retrieval/answer path; record whether the mic is Gallery ASR or iOS keyboard dictation |
 | Read aloud | Tap the generated reply's speaker, if offered in Agent Skills | The actual final answer plays audibly; verify content, language, and stop/replay |
