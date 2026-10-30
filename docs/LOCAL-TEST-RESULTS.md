@@ -1,12 +1,26 @@
 # Local test record — 2026-10-30
 
 **Current implementation: single excerpt, fixed 8,000-character limit, no
-batching or caching. Latest result: 22 tests passed, 0 failed.** Earlier batch
+batching or caching. Latest result: 45 tests passed, 0 failed across both skill runners.** Earlier batch
 sections below are historical experiments, not features of the current skill.
 
 **Measured scope: macOS desktop Chrome, not Gallery or iOS.**
 No Android device test was used to infer iOS support. No on-device model or
 speech engine was run locally.
+
+## Key details extractor addition
+
+`npm test`: **45 passed, 0 failed** (22 existing reader checks applied to each
+standalone runner, plus one extractor platform-rejection check). The initial
+sandbox run could not bind the local fixture server (`listen EPERM`); the
+approved run outside the sandbox completed successfully. The new check covers
+known social-media/YouTube hosts before fetch and a platform final response URL.
+
+The extractor uses the existing bounded reader, with an additional unsupported
+platform check. Tests cover retrieval and the Gallery bridge, not model-based
+entity extraction, evidence accuracy, skill routing or iPhone behavior. Pasted
+text extraction is instruction-only and still needs on-device evaluation.
+No fresh live public-site or iPhone tests were performed for this addition.
 
 ## Automated checks
 

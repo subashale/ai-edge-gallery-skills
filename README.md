@@ -1,7 +1,45 @@
-# AI Edge Gallery skills — Read and explain
+# AI Edge Gallery skills — Read and explain + Key details extractor
 
-This repository contains a **Google AI Edge Gallery Agent Skill**, plus local
-source, tests, and validation notes. The installable skill is
+
+## Key details extractor
+
+New skill: `skills/key-details-extractor/SKILL.md` and `scripts/index.html`.
+It accepts pasted text directly or fetches one supplied public HTTPS webpage
+with the same bounded reader used by read-and-explain. The two skills install
+independently; the extractor does not require another skill to be enabled.
+The runner copies the existing reader to keep each two-file payload standalone;
+reader fixes should be applied to both copies. The extractor additionally rejects
+known social-media/YouTube hostnames, including final redirect destinations.
+
+Examples:
+
+> Extract key details: Your appointment with Alex is on 12 November at 14:30. Reference BK-481.
+
+> Extract the key details from https://subashale.com.np/
+
+The model is instructed to return Field / Value / Evidence, preserve exact
+values, mark missing requested details as Not stated, and flag ambiguity.
+Website answers must include the source and disclose partial-page coverage.
+These are model instructions, not deterministic extraction guarantees.
+
+Pasted text requires no fetch. Websites use the same 8,000-character excerpt,
+512 KiB body limit, 15-second timeout, CORS restrictions and no-storage approach.
+Social-media posts, YouTube comments, private pages, PDFs and video transcripts
+are unsupported; paste the actual text instead. No YouTube API integration or
+API key is included.
+
+After publishing the updated source upload, add this separate Gallery URL:
+
+`https://subashale.github.io/ai-edge-gallery-skills/skills/key-details-extractor/`
+
+Alternatively, extract `dist/key-details-extractor.zip` for local import if your
+Gallery picker supports it. Start a fresh chat and enable the extractor. Phone
+installation, skill selection and model extraction quality still need validation;
+desktop tests verify the reader, not Gemma's final answers. See the extractor
+checks in [IOS-VALIDATION.md](docs/IOS-VALIDATION.md).
+
+This repository contains two **Google AI Edge Gallery Agent Skills**, plus local
+source, tests, and validation notes. The original reader skill is
 [`skills/read-and-explain`](skills/read-and-explain): `SKILL.md` and
 `scripts/index.html`. The HTML is Gallery's hidden logic runner.
 
@@ -43,7 +81,7 @@ proof of iOS support and no longer describe the current feature set.
 
 ## Upload and install
 
-The [upload list](docs/UPLOAD-FILES.md) contains the same 17 source files.
+The [upload list](docs/UPLOAD-FILES.md) contains the same 19 source files.
 Keep `.nojekyll` at the repository root and publish GitHub Pages from
 **main → /(root)**. Extract the upload ZIP into a fresh folder and upload its
 contents, preserving `skills/read-and-explain/`.
@@ -148,7 +186,7 @@ git clone --depth 1 https://github.com/google-ai-edge/gallery.git upstream/galle
 The original inspected commit is recorded in the upstream notes. A fresh clone
 may be newer; record its commit when comparing results.
 
-Packaging writes `dist/read-and-explain.zip`, the complete source upload ZIP
+Packaging writes `dist/read-and-explain.zip`, `dist/key-details-extractor.zip`, the complete source upload ZIP
 `dist/ai-edge-gallery-skills-upload.zip`, `dist/UPLOAD-FILES.txt`, and
 `dist/SHA256SUMS`. The upload archive excludes `upstream/`, `node_modules/`,
 `test-results/`, build output, and macOS metadata. Curated findings stay in

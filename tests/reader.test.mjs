@@ -1,10 +1,12 @@
-import { before, after, test } from "node:test";
+import { before, after, test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { launch } from "./browser.mjs";
 import { fixture } from "./https-fixture.mjs";
 
-const runner = await readFile(new URL("../skills/read-and-explain/scripts/index.html", import.meta.url), "utf8");
+for (const skill of ["read-and-explain", "key-details-extractor"]) {
+describe(skill, async () => {
+const runner = await readFile(new URL(`../skills/${skill}/scripts/index.html`, import.meta.url), "utf8");
 const article = "Plants use sunlight to turn water and carbon dioxide into stored chemical energy. Oxygen is released during this process. This text is a controlled test fixture, not a live article.";
 let browser;
 let httpsFixture;
@@ -295,3 +297,23 @@ test("the 8000-character cap does not split a Unicode surrogate pair", async t =
   assert.match(result, /Excerpt truncated: yes/);
   assert.doesNotMatch(excerpt, /[\uD800-\uDBFF]$/);
 });
+
+if (skill === "key-details-extractor") {
+  test("rejects platform links before fetching and after a redirect", async t => {
+    const page = await session(t);
+    let requests = 0;
+    await page.route("**/*", route => { requests++; return route.abort(); });
+    for (const url of ["https://www.youtube.com/watch?v=abc&lc=123", "https://youtu.be/abc", "https://m.facebook.com/post", "https://www.instagram.com/p/abc", "https://x.com/user/status/123", "https://www.tiktok.com/@user/video/123", "https://www.reddit.com/r/test/comments/123"]) {
+      assert.match((await invoke(page, { url })).error, /UNSUPPORTED_PLATFORM/);
+    }
+    assert.equal(requests, 0);
+    await page.evaluate(() => {
+      window.fetch = async () => ({ ok: true, url: "https://www.youtube.com/watch?v=abc", headers: new Headers() });
+    });
+    const value = await invoke(page);
+    assert.match(value.error, /UNSUPPORTED_PLATFORM/);
+    assert.equal(value.result, undefined);
+  });
+}
+});
+}

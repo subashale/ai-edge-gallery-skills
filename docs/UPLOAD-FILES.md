@@ -1,6 +1,6 @@
 # Files to upload
 
-Use this source layout for `subashale/ai-edge-gallery-skills`. All 17 files are
+Use this source layout for `subashale/ai-edge-gallery-skills`. All 19 files are
 included in `dist/ai-edge-gallery-skills-upload.zip` after `npm run package`.
 Extract that ZIP into a fresh folder, then upload the contents of its
 `ai-edge-gallery-skills/` folder to the GitHub repository root.
@@ -18,6 +18,10 @@ docs/
   HOSTING-STATUS.md
   IOS-VALIDATION.md
 skills/
+  key-details-extractor/
+    SKILL.md
+    scripts/
+      index.html
   read-and-explain/
     SKILL.md
     scripts/
@@ -53,3 +57,12 @@ continuing to use that older copy.
 The folder itself can show a browser 404 when no homepage index exists. Gallery
 needs the two actual skill files, not a rendered folder page. Successful Pages
 hosting does not prove iOS retrieval or speech compatibility.
+
+
+For the new Key Details Extractor, also add this URL in Gallery after deployment:
+
+`https://subashale.github.io/ai-edge-gallery-skills/skills/key-details-extractor/`
+
+Verify its `/SKILL.md` and `/scripts/index.html` endpoints. Both skills have
+standalone two-file ZIPs in `dist/`; the complete upload ZIP includes both.
+The extractor is new and has not been deployed or validated on the iPhone.
