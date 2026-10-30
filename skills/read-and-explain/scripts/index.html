@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; connect-src https:; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Read and explain</title>
+</head>
+<body>
+<script>
+"use strict";
+(() => {
+  const MAX_BYTES = 512 * 1024;
+  const DEFAULT_MAX_CHARS = 4000;
+  const TIMEOUT_MS = 15000;
+  const CACHE_KEY = "ai-edge-gallery:read-and-explain:temporary:v1";
+  const CACHE_TTL_MS = 15 * 60 * 1000;
+  let cacheTimer;
+
+  function fail(code, message) {
+    const error = new Error(message);
+    error.code = code;
+    throw error;
+  }
+
+  function publicUrl(value) {
+    if (typeof value !== "string" || value.length > 2048) {
+      fail("INVALID_URL", "Supply one public HTTPS URL (at most 2048 characters).");
+    }
+    let url;
+    try { url = new URL(value); }
+    catch (_) { fail("INVALID_URL", "The supplied URL is invalid."); }
+    if (url.protocol !== "https:" || url.username || url.password) {
+      fail("INVALID_URL", "Only public HTTPS URLs without embedded credentials are supported.");
+    }
+    const host = url.hostname.toLowerCase();
+    // Keep this prototype to public hostnames. This is not a DNS/network firewall.
+    if (!host.includes(".") || host.endsWith(".local") || host.endsWith(".localhost") ||
+        host.endsWith(".internal") || host.endsWith(".") ||
+        /^[\d.]+$/.test(host) || host.includes(":")) {
+      fail("INVALID_URL", "Supply a public hostname, not a local address or IP literal.");
+    }
+    url.hash = "";
+    return url;
+  }
+
+  async function readBody(response) {
+    if (Number(response.headers.get("content-length")) > MAX_BYTES) {
+      fail("PAGE_TOO_LARGE", "The page exceeds the 512 KiB prototype limit.");
+    }
+    if (!response.body || typeof response.body.getReader !== "function" ||
+        typeof TextDecoder !== "function") {
+      fail("UNSUPPORTED_RUNTIME", "This WebView does not expose the streaming text APIs required by the reader.");
+    }
+    const charset = /charset\s*=\s*["']?([^\s;"']+)/i.exec(response.headers.get("content-type") || "");
+    let decoder;
+    try { decoder = new TextDecoder(charset ? charset[1] : "utf-8"); }
+    catch (_) { fail("UNSUPPORTED_ENCODING", "The page declares an unsupported text encoding."); }
+    const reader = response.body.getReader();
+    let bytes = 0;
+    let text = "";
+    try {
+      while (true) {
+        const chunk = await reader.read();
+        if (chunk.done) break;
+        bytes += chunk.value.byteLength;
+        if (bytes > MAX_BYTES) fail("PAGE_TOO_LARGE", "The page exceeds the 512 KiB prototype limit.");
+        text += decoder.decode(chunk.value, { stream: true });
+      }
+      return text + decoder.decode();
+    } finally {
+      // Cancel on error too, so a size rejection does not keep downloading.
+      try { await reader.cancel(); } catch (_) { /* already closed/aborted */ }
+      reader.releaseLock();
+    }
+  }
+
+  const clean = text => text.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
+    .replace(/\s+/g, " ").trim();
+
+  function extract(html) {
+    // Parse into a detached document. Never render or execute retrieved markup.
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const title = clean(doc.title || "").slice(0, 180);
+    doc.querySelectorAll("script, style, noscript, template, nav, header, footer, aside, form, iframe, object, embed, svg, canvas, [hidden], [aria-hidden='true'], [inert]")
+      .forEach(node => node.remove());
+    doc.querySelectorAll("[style]").forEach(node => {
+      if (/display\s*:\s*none|visibility\s*:\s*hidden/i.test(node.getAttribute("style"))) node.remove();
+    });
+    // Preserve block/line boundaries even in minified HTML.
+    doc.querySelectorAll("br").forEach(node => node.replaceWith(doc.createTextNode("\n")));
+    doc.querySelectorAll("p, div, section, article, main, h1, h2, h3, h4, h5, h6, li, tr, blockquote, pre")
+      .forEach(node => node.appendChild(doc.createTextNode("\n")));
+    const candidates = Array.from(doc.querySelectorAll("article, main, [role='main']"));
+    const root = candidates.sort((a, b) => b.textContent.length - a.textContent.length)[0] || doc.body;
+    const text = (root ? root.textContent : "").split(/\n+/).map(clean).filter(Boolean).join("\n");
+    if (text.length < 80) {
+      fail("NO_READABLE_TEXT", "Too little readable text was returned. The page may need JavaScript, a login, or a different URL.");
+    }
+    // Common challenge/login shells can arrive as HTTP 200. Do not call them articles.
+    if (/^(just a moment|access denied|attention required|sign in|log in|captcha)\b/i.test(title) ||
+        (text.length < 1500 && /verify (?:that )?you are human|enable javascript and cookies|checking your browser|sign in to continue|subscribe to continue/i.test(text))) {
+      fail("ACCESS_PAGE", "The server returned an access, login, subscription, or bot-check page instead of readable content.");
+    }
+    return { title, text };
+  }
+
+  function maxChars(input) {
+    const value = input.max_chars === undefined ? DEFAULT_MAX_CHARS : input.max_chars;
+    if (!Number.isInteger(value) || value < 256 || value > MAX_BYTES) {
+      fail("INVALID_INPUT", "max_chars must be an integer from 256 to 524288. It is a character budget, not remaining model context.");
+    }
+    return value;
+  }
+
+  function scheduleExpiry(page) {
+    clearTimeout(cacheTimer);
+    cacheTimer = setTimeout(() => {
+      try {
+        const current = JSON.parse(window.sessionStorage.getItem(CACHE_KEY) || "null");
+        if (current?.id === page.id) window.sessionStorage.removeItem(CACHE_KEY);
+      } catch (_) { /* Storage may disappear with the WebView session. */ }
+    }, Math.max(0, page.expiresAt - Date.now()));
+  }
+
+  function cachePage(page) {
+    try {
+      const bytes = new Uint8Array(16);
+      window.crypto.getRandomValues(bytes);
+      page.id = Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+      page.expiresAt = Date.now() + CACHE_TTL_MS;
+      // One document only. A fresh fetch replaces the previous snapshot.
+      window.sessionStorage.setItem(CACHE_KEY, JSON.stringify(page));
+      scheduleExpiry(page);
+      return "available (one document; expires after 15 minutes or loss of WebView session)";
+    } catch (_) {
+      page.id = null;
+      return "unavailable; only this batch can be returned, and read cannot continue";
+    }
+  }
+
+  function cachedPage(id) {
+    if (typeof id !== "string" || !/^[a-f0-9]{32}$/.test(id)) {
+      fail("INVALID_INPUT", "read and clear require the exact document_id returned by fetch.");
+    }
+    let raw;
+    try { raw = window.sessionStorage.getItem(CACHE_KEY); }
+    catch (_) { fail("CACHE_UNAVAILABLE", "Temporary WebView storage is unavailable. Fetch the supplied URL again; no cached text was read."); }
+    let page;
+    try { page = JSON.parse(raw || "null"); }
+    catch (_) { fail("CACHE_MISS", "The temporary document snapshot is invalid. Fetch the supplied URL again."); }
+    if (!page || page.id !== id || typeof page.text !== "string" || page.text.length > MAX_BYTES || !Number.isFinite(page.expiresAt)) {
+      fail("CACHE_MISS", "The document snapshot was lost or replaced. Fetch the supplied URL again; no other document was substituted.");
+    }
+    if (Date.now() >= page.expiresAt) {
+      window.sessionStorage.removeItem(CACHE_KEY);
+      fail("CACHE_EXPIRED", "The temporary document expired. Fetch the supplied URL again.");
+    }
+    scheduleExpiry(page);
+    return page;
+  }
+
+  function batchResult(page, offset, limit, cacheStatus) {
+    if (!Number.isInteger(offset) || offset < 0 || offset >= page.text.length) {
+      fail("INVALID_OFFSET", "offset must be an integer inside the cached text. Use the returned Next offset.");
+    }
+    let excerpt = page.text.slice(offset, offset + limit);
+    if (/[\uD800-\uDBFF]$/.test(excerpt)) excerpt = excerpt.slice(0, -1);
+    if (offset > 0 && /[\uDC00-\uDFFF]/.test(page.text[offset]) && /[\uD800-\uDBFF]/.test(page.text[offset - 1])) {
+      fail("INVALID_OFFSET", "offset splits a Unicode character. Use the returned Next offset.");
+    }
+    const end = offset + excerpt.length;
+    const more = end < page.text.length;
+    return JSON.stringify({ result: [
+      `Source URL: ${page.sourceUrl}`,
+      ...(page.requestedUrl !== page.sourceUrl ? [`Requested URL: ${page.requestedUrl}`] : []),
+      `Title: ${page.title || "Untitled page"}`,
+      `Retrieved at: ${page.retrievedAt}`,
+      `Excerpt characters: ${excerpt.length} / ${page.text.length} extracted (not a token count)`,
+      `Batch character budget: ${limit} (not tokens)`,
+      `Batch range: ${offset}-${end} (zero-based; end excluded)`,
+      `Excerpt truncated: ${offset > 0 || more ? "yes (this is a partial-page batch)" : "no"}`,
+      `Temporary cache: ${cacheStatus}`,
+      ...(page.id ? [`Document ID: ${page.id}`, `Cache expires at: ${new Date(page.expiresAt).toISOString()}`] : []),
+      `More available: ${more ? "yes" : "no"}`,
+      `Next offset: ${more && page.id ? end : "none"}`,
+      "BEGIN UNTRUSTED PAGE TEXT", excerpt, "END UNTRUSTED PAGE TEXT"
+    ].join("\n") });
+  }
+
+  window.ai_edge_gallery_get_result = async data => {
+    let source = "";
+    let stage = "input";
+    let controller;
+    let timer;
+    let timedOut = false;
+    try {
+      let input;
+      try { input = JSON.parse(data); }
+      catch (_) { fail("INVALID_INPUT", "data must be a JSON string containing url."); }
+      if (!input || typeof input !== "object" || Array.isArray(input)) fail("INVALID_INPUT", "data must contain a JSON object.");
+      const action = input.action === undefined ? "fetch" : input.action;
+      if (!["fetch", "read", "clear"].includes(action)) fail("INVALID_INPUT", "action must be fetch, read, or clear.");
+      const limit = maxChars(input);
+      if (action !== "fetch") {
+        stage = "cache";
+        const page = cachedPage(input.document_id);
+        source = page.sourceUrl;
+        if (action === "clear") {
+          window.sessionStorage.removeItem(CACHE_KEY);
+          clearTimeout(cacheTimer);
+          return JSON.stringify({ result: `Temporary document cache cleared. Source URL: ${source}` });
+        }
+        return batchResult(page, input.offset, limit, "available (same retrieved snapshot; no new network request)");
+      }
+      const url = publicUrl(input && input.url);
+      source = url.href;
+      // Starting a new retrieval invalidates any older snapshot, even if it fails.
+      try { window.sessionStorage.removeItem(CACHE_KEY); clearTimeout(cacheTimer); } catch (_) { /* optional storage */ }
+      if (typeof AbortController !== "function") {
+        fail("UNSUPPORTED_RUNTIME", "This WebView does not support cancellable retrieval.");
+      }
+      controller = new AbortController();
+      timer = setTimeout(() => { timedOut = true; controller.abort(); }, TIMEOUT_MS);
+      stage = "fetch";
+      const response = await fetch(source, {
+        method: "GET", mode: "cors", credentials: "omit", redirect: "follow",
+        referrerPolicy: "no-referrer", signal: controller.signal
+      });
+      if (!response.ok) fail("HTTP_ERROR", `The server returned HTTP ${response.status}. No page text was used.`);
+      if (response.type === "opaque") fail("UNREADABLE_RESPONSE", "The WebView cannot read this cross-origin response.");
+      const finalUrl = publicUrl(response.url || source).href;
+      const type = (response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+      if (type !== "text/html" && type !== "text/plain") {
+        fail("UNSUPPORTED_TYPE", "Only text/html and text/plain pages are supported; PDFs, feeds, and downloads are not read.");
+      }
+      stage = "read";
+      const body = await readBody(response);
+      stage = "extract";
+      const page = type === "text/html" ? extract(body) : { title: "Plain text", text: clean(body) };
+      if (page.text.length < 80) fail("NO_READABLE_TEXT", "The response did not contain enough readable text.");
+      page.sourceUrl = finalUrl;
+      page.requestedUrl = source;
+      page.retrievedAt = new Date().toISOString();
+      stage = "cache";
+      const cacheStatus = cachePage(page);
+      stage = "format";
+      return batchResult(page, 0, limit, cacheStatus);
+    } catch (error) {
+      const ownCode = typeof error?.code === "string" ? error.code : null;
+      const fallbackCodes = {
+        input: "INVALID_INPUT", fetch: "FETCH_FAILED", read: "READ_FAILED",
+        extract: "EXTRACTION_FAILED", cache: "CACHE_FAILED", format: "FORMAT_FAILED"
+      };
+      const code = timedOut ? "TIMEOUT" : (ownCode || fallbackCodes[stage]);
+      const message = timedOut ? "Retrieval exceeded 15 seconds; no page text was returned." :
+        ownCode ? error.message : stage === "fetch" ?
+        "Retrieval failed. CORS, connectivity, TLS, redirects, or WebView policy may be blocking access; this runtime cannot distinguish them reliably." :
+        `The reader failed during the ${stage} stage. No page text was returned.`;
+      const browserError = clean(`${error?.name || "Error"}: ${error?.message || String(error)}`).slice(0, 240);
+      return JSON.stringify({ error: [
+        `[${code}] ${message}`,
+        `Stage: ${stage}`,
+        ...(source ? [`Source URL: ${source}`] : []),
+        `Runner origin: ${window.location.origin || "unknown"}`,
+        ...(!ownCode || timedOut ? [`Browser error: ${browserError}`] : [])
+      ].join("\n") });
+    } finally {
+      clearTimeout(timer);
+      if (controller) controller.abort();
+    }
+  };
+})();
+</script>
+</body>
+</html>
