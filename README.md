@@ -28,11 +28,13 @@ User-reported setup: iPhone 12 Pro, iOS 27.2, Gallery 1.0.22,
 `gemma-4-E2B-it-litert-lm` from Hugging Face. Gallery displays Max tokens 32,000.
 The reported speed/TTFT/prefill/RAM stats do not show remaining context tokens.
 
-An earlier control-page read worked in Gallery. The user's website initially
+The user now reports that the single-excerpt flow looks good. Earlier, a
+control-page read worked in Gallery. The user's website initially
 failed, and later model replies gave ambiguous budget and continuation claims
 without raw tool results. Caching/batching was subsequently reported as not
-working. The current single-excerpt 8,000-character version requires a fresh
-phone test. Microphone input and read-aloud in Agent Skills remain unverified.
+working. Raw tool details for the current flow have not been independently
+inspected. The user confirmed that both microphone input and reply read-aloud
+work inside Agent Skills. Their engines and offline behavior remain unverified.
 
 See the [iPhone procedure](docs/IOS-VALIDATION.md),
 [local test record](docs/LOCAL-TEST-RESULTS.md), and
@@ -79,6 +81,9 @@ Try in Gallery:
 > Read and explain https://subashale.com.np/ in three sentences. Show the exact returned Excerpt character limit and Excerpt truncated lines.
 
 The tool result should contain `Excerpt character limit: 8000 (not tokens)`.
+The current local revision also reports `Reader version: 0.1.0` in success and
+error text. Use that actual tool field, when visible, to identify the installed
+runner after deployment; a model's guessed version is not sufficient evidence.
 A shorter page returns fewer characters. Long pages are explicitly marked
 truncated, and the answer must disclose partial coverage. A failed fetch
 returns an error and no invented or previously cached page content. Repeating
@@ -96,6 +101,8 @@ the URL fetches a fresh first excerpt; it does not retrieve a later part.
 - No authenticated pages, PDFs, RSS, search, rendered JavaScript applications,
   link crawling, or proxy fallback. CORS/WebView policy can still prevent reads.
 - Extraction favors main/article content and removes common non-content markup.
+  It preserves headers inside article/main content so headlines and displayed
+  publication dates remain available, while dropping outer site headers.
   It does not apply external CSS or recognize every access/paywall screen.
 - Page content is untrusted; the model is instructed to ignore embedded commands.
   Its grounding and instruction compliance still need device validation.
@@ -104,8 +111,12 @@ the URL fetches a fresh first excerpt; it does not retrieve a later part.
 - Speech is handled by Gallery if available. The skill invokes no native intents,
   Web Speech, MCP, file-writing API, or cloud model.
 
-RSS/search and any optional Mac helper remain later work after this simpler
-phone flow and its available speech path have been validated.
+The next candidate is a separate RSS reader returning a few item titles,
+dates, descriptions, and links. An initial desktop probe could read NASA RSS
+from the hosted skill origin; BBC RSS, Google News RSS, and Google HTML search
+were blocked by CORS. These are endpoint-specific desktop findings, not iOS
+tests. See the feasibility notes in UPSTREAM-NOTES.md. No RSS/search skill or
+Mac helper has been added to this reader.
 
 ## Local checks and packaging
 

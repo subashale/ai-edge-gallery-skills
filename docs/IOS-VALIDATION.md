@@ -1,9 +1,10 @@
 # iPhone installation and validation
 
 **Current version: one excerpt of up to 8,000 characters; no cache, batches,
-continuation, or file saving.** The user reported the cached-batch flow as not
-working and requested this simpler fallback. Device validation is pending for
-this revision.
+continuation, or file saving.** The user reports that this simpler flow looks
+good and that both microphone input and reply read-aloud work in Agent Skills.
+The latest local extraction/version refinement still needs a phone check if
+published. Raw tool details and offline speech behavior remain unverified.
 
 | Setup field | User-reported value |
 | --- | --- |
@@ -15,7 +16,8 @@ this revision.
 | Performance stats | 11 tok/s; TTFT 7000 ms; prefill 215 tok/s; RAM 3.6 and 65% as reported |
 | Import options | URL loading and local import visible |
 | Remaining context tokens | Not shown in reported stats; no skill-readable counter verified |
-| Agent Skills microphone / read-aloud | Not yet verified |
+| Agent Skills microphone / read-aloud | Both work — user confirmed inside Agent Skills |
+| Offline recognition/playback engines | Not verified |
 
 ## What was observed earlier
 
@@ -26,6 +28,9 @@ this revision.
   was not considered verification of the actual budget or fetch.
 - Continuation then reported a missing document ID and guessed offset 40.
 - The user ultimately reported that batch/caching did not work on the phone.
+- After switching to the single-excerpt version, the user reported it looks
+  good and confirmed that both microphone input and read-aloud work inside
+  Agent Skills. This is user-reported device evidence, not a desktop inference.
 
 Desktop browser tests of earlier caches succeeded, but did not establish iOS
 compatibility. The public skill contract does not provide a verified native
@@ -48,6 +53,8 @@ file-writing bridge for iOS. No alternative native-file cache was implemented.
 
 The script makes no storage access or file writes. Requests use `cache: no-store`.
 This does not claim that chat history or earlier app/OS storage is erased.
+The latest local reader revision reports `Reader version: 0.1.0` in both success
+and error text; use the actual tool field when available to identify that code.
 
 ## Test in order
 
@@ -89,6 +96,8 @@ A 32,000 Max tokens setting and the reported speed/RAM values do not tell this
 script how much context remains. The 8,000-character excerpt is an explicit
 prototype limit requested by the user, not the model's maximum token capacity.
 
-RSS/Google HTML search and any optional Mac helper remain later work after
-this simple flow and available speech path work on the phone. No deployment
-or messages to external maintainers were performed by the assistant.
+The core flow and speech are now user-reported as working. Initial desktop
+probes of RSS and Google HTML search are recorded in UPSTREAM-NOTES.md. NASA
+RSS was readable from the hosted origin; Google HTML search was blocked by
+CORS. RSS on this iPhone is not yet tested and is not part of read-and-explain.
+No deployment or messages to external maintainers were performed by the assistant.

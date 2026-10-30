@@ -58,6 +58,15 @@ test("uses main content and preserves minified block boundaries", async t => {
   assert.doesNotMatch(result, /advert/);
 });
 
+test("preserves article headlines and dates while removing the site header", async t => {
+  const page = await session(t);
+  await reply(page, `<title>Generic news site</title><header>Site masthead noise</header><main><article><header><h1>Local train service returns</h1><p>Published <time datetime="2026-10-30">30 October 2026</time></p></header><p>${article}</p></article></main><footer>Site footer noise</footer>`);
+  const { result } = await invoke(page);
+  assert.match(result, /Local train service returns/);
+  assert.match(result, /Published 30 October 2026/);
+  assert.doesNotMatch(result, /Site masthead noise|Site footer noise/);
+});
+
 test("accepts plain text and honors the declared encoding", async t => {
   const page = await session(t);
   await reply(page, Buffer.from(`Caf\xe9. ${article}`, "latin1"), "text/plain; charset=iso-8859-1");

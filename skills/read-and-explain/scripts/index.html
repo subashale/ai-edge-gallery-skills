@@ -13,6 +13,7 @@
   const MAX_BYTES = 512 * 1024;
   const MAX_EXCERPT_CHARS = 8000;
   const TIMEOUT_MS = 15000;
+  const READER_VERSION = "0.1.0";
 
   function fail(code, message) {
     const error = new Error(message);
@@ -79,8 +80,11 @@
     // Parse into a detached document. Never render or execute retrieved markup.
     const doc = new DOMParser().parseFromString(html, "text/html");
     const title = clean(doc.title || "").slice(0, 180);
-    doc.querySelectorAll("script, style, noscript, template, nav, header, footer, aside, form, iframe, object, embed, svg, canvas, [hidden], [aria-hidden='true'], [inert]")
+    doc.querySelectorAll("script, style, noscript, template, nav, footer, aside, form, iframe, object, embed, svg, canvas, [hidden], [aria-hidden='true'], [inert]")
       .forEach(node => node.remove());
+    doc.querySelectorAll("header").forEach(node => {
+      if (!node.closest("article, main, [role='main']")) node.remove();
+    });
     doc.querySelectorAll("[style]").forEach(node => {
       if (/display\s*:\s*none|visibility\s*:\s*hidden/i.test(node.getAttribute("style"))) node.remove();
     });
@@ -145,6 +149,7 @@
       const truncated = excerpt.length < page.text.length;
       stage = "format";
       return JSON.stringify({ result: [
+        `Reader version: ${READER_VERSION}`,
         `Source URL: ${finalUrl}`,
         ...(finalUrl !== source ? [`Requested URL: ${source}`] : []),
         `Title: ${page.title || "Untitled page"}`,
@@ -168,6 +173,7 @@
       const browserError = clean(`${error?.name || "Error"}: ${error?.message || String(error)}`).slice(0, 240);
       return JSON.stringify({ error: [
         `[${code}] ${message}`,
+        `Reader version: ${READER_VERSION}`,
         `Stage: ${stage}`,
         ...(source ? [`Source URL: ${source}`] : []),
         `Runner origin: ${window.location.origin || "unknown"}`,

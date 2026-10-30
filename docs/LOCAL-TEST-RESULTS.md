@@ -1,7 +1,7 @@
 # Local test record — 2026-10-30
 
 **Current implementation: single excerpt, fixed 8,000-character limit, no
-batching or caching. Latest result: 21 tests passed, 0 failed.** Earlier batch
+batching or caching. Latest result: 22 tests passed, 0 failed.** Earlier batch
 sections below are historical experiments, not features of the current skill.
 
 **Measured scope: macOS desktop Chrome, not Gallery or iOS.**
@@ -231,3 +231,25 @@ The raw report is local-only at `test-results/live.json`, recorded
 2026-10-30T20:50:19.402Z. No on-device model was run. The simplified revision
 still requires a fresh iPhone test after replacement of both skill files and
 starting a new chat. No updated version was published by the assistant.
+
+## Small extraction refinement and device confirmation
+
+The latest local refinement preserves headers inside article/main content,
+retaining article headlines and displayed publication dates while still
+removing outer site headers. It also reports `Reader version: 0.1.0` inside
+success/error text. The article-header regression test passed; current total:
+**22 browser tests passed, 0 failed**. The one-fetch API, 8,000-character cap,
+storage independence, and failure diagnostics remain in place.
+
+The user confirmed the simple flow looks good, with both microphone input and
+reply read-aloud working **inside Agent Skills** on the previously recorded
+iPhone setup. These are user-reported device results. Speech engine selection,
+offline behavior, and independent inspection of raw tool output remain open.
+
+Initial RSS/Google HTML feasibility probes were also run in desktop Chrome
+from the actual GitHub Pages origin. NASA RSS returned readable HTTP 200 XML
+with 10 items. BBC RSS, Google News RSS, and Google HTML search failed with
+browser console messages identifying missing CORS allow-origin headers.
+The local-only record is `test-results/rss-search-feasibility.json`. The
+existing reader still rejects RSS content types; no RSS/search implementation
+or hosting change was made.

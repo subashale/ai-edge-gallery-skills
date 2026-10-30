@@ -95,3 +95,35 @@ need app capabilities not verified here. After the user reported batch/cache
 failure, the implementation therefore takes the requested fallback: one
 8,000-character excerpt, with no storage or file-writing dependency. This is
 not a claim that iOS generally cannot save files.
+
+## RSS and Google HTML search feasibility
+
+After the user reported the simple reader and Agent Skills speech working,
+read-only desktop Chrome probes used the actual
+`https://subashale.github.io` skill origin, with normal CORS/TLS enforcement,
+no credentials, no proxy, no paid API, and no cloud LLM. Results are local-only
+at `test-results/rss-search-feasibility.json`.
+
+| Endpoint | Observed desktop result |
+| --- | --- |
+| `https://www.nasa.gov/feed/` | HTTP 200; readable application/rss+xml; 259,200 bytes; valid RSS with 10 items |
+| `https://feeds.bbci.co.uk/news/rss.xml` | Fetch blocked; browser console identified a missing CORS allow-origin header |
+| Google News RSS search for Google AI Edge Gallery | Fetch blocked; browser console identified a missing CORS allow-origin header |
+| Google HTML search for Google AI Edge Gallery | Fetch blocked; browser console identified a missing CORS allow-origin header |
+
+NASA publishes [RSS feed information](https://www.nasa.gov/rss-feeds/).
+The NASA response body was readable in the browser probe; no claim is made
+about the allow-origin header's literal value because it was not exposed to
+page JavaScript. A small standalone RSS prototype could extract three to five
+items with title, date, a bounded description, and source link. Feed descriptions
+are source excerpts, not proof the linked article was fully read. Cross-origin
+retrieval and the model's summaries still need testing in Gallery on iPhone.
+
+Direct Google HTML search is not a dependable direct-WebView implementation
+based on this probe. Google also documents automated-traffic challenges in its
+[Search Help](https://support.google.com/websearch/answer/86640?hl=en). No
+challenge bypass, server helper, scrape proxy, or search API was introduced.
+
+This is an investigation only. The working read-and-explain skill keeps its
+single-page HTML/plain-text contract and still rejects feeds. No further skill
+was created and nothing was deployed as part of these probes.
