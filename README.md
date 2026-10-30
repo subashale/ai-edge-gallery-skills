@@ -18,5 +18,7 @@ The hidden runner is `read-and-explain/scripts/index.html`.
 Try: `Read and explain https://httpbin.org/html in two sentences.`
 
 Many webpages block cross-origin retrieval. Failures must be reported instead
-of inventing page content. Local desktop tests passed; successful Gallery iOS
-execution, model behavior, microphone input, and read-aloud are still unverified.
+of inventing page content. Local desktop tests passed. A public HTML control
+page was reported to work in Gallery on iPhone, while another webpage failed.
+Broad iOS compatibility, model grounding, microphone input, and read-aloud
+remain unverified.

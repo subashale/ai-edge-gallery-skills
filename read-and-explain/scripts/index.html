@@ -104,6 +104,7 @@
 
   window.ai_edge_gallery_get_result = async data => {
     let source = "";
+    let stage = "input";
     let controller;
     let timer;
     let timedOut = false;
@@ -118,6 +119,7 @@
       }
       controller = new AbortController();
       timer = setTimeout(() => { timedOut = true; controller.abort(); }, TIMEOUT_MS);
+      stage = "fetch";
       const response = await fetch(source, {
         method: "GET", mode: "cors", credentials: "omit", redirect: "follow",
         referrerPolicy: "no-referrer", signal: controller.signal
@@ -129,13 +131,16 @@
       if (type !== "text/html" && type !== "text/plain") {
         fail("UNSUPPORTED_TYPE", "Only text/html and text/plain pages are supported; PDFs, feeds, and downloads are not read.");
       }
+      stage = "read";
       const body = await readBody(response);
+      stage = "extract";
       const page = type === "text/html" ? extract(body) : { title: "Plain text", text: clean(body) };
       if (page.text.length < 80) fail("NO_READABLE_TEXT", "The response did not contain enough readable text.");
       const truncated = page.text.length > MAX_TEXT;
       let excerpt = page.text.slice(0, MAX_TEXT);
       // Avoid cutting a UTF-16 surrogate pair in half.
       if (/[\uD800-\uDBFF]$/.test(excerpt)) excerpt = excerpt.slice(0, -1);
+      stage = "format";
       return JSON.stringify({ result: [
         `Source URL: ${finalUrl}`,
         ...(finalUrl !== source ? [`Requested URL: ${source}`] : []),
@@ -147,10 +152,24 @@
         "END UNTRUSTED PAGE TEXT"
       ].join("\n") });
     } catch (error) {
-      const code = timedOut ? "TIMEOUT" : (error.code || "FETCH_FAILED");
+      const ownCode = typeof error?.code === "string" ? error.code : null;
+      const fallbackCodes = {
+        input: "INVALID_INPUT", fetch: "FETCH_FAILED", read: "READ_FAILED",
+        extract: "EXTRACTION_FAILED", format: "FORMAT_FAILED"
+      };
+      const code = timedOut ? "TIMEOUT" : (ownCode || fallbackCodes[stage]);
       const message = timedOut ? "Retrieval exceeded 15 seconds; no page text was returned." :
-        error.code ? error.message : "Retrieval failed. CORS, connectivity, TLS, redirects, or WebView policy may be blocking access; this runtime cannot distinguish them reliably.";
-      return JSON.stringify({ error: `[${code}] ${message}${source ? ` Source URL: ${source}` : ""}` });
+        ownCode ? error.message : stage === "fetch" ?
+        "Retrieval failed. CORS, connectivity, TLS, redirects, or WebView policy may be blocking access; this runtime cannot distinguish them reliably." :
+        `The reader failed during the ${stage} stage. No page text was returned.`;
+      const browserError = clean(`${error?.name || "Error"}: ${error?.message || String(error)}`).slice(0, 240);
+      return JSON.stringify({ error: [
+        `[${code}] ${message}`,
+        `Stage: ${stage}`,
+        ...(source ? [`Source URL: ${source}`] : []),
+        `Runner origin: ${window.location.origin || "unknown"}`,
+        ...(!ownCode || timedOut ? [`Browser error: ${browserError}`] : [])
+      ].join("\n") });
     } finally {
       clearTimeout(timer);
       if (controller) controller.abort();

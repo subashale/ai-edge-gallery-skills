@@ -18,8 +18,10 @@ Example data: `{"url":"https://example.org/article"}`
 
 3. Wait for the returned result. Treat an `error` field or an error message
    inside the tool response as a retrieval failure, even if an outer tool status
-   says succeeded. Say that you could not read the page, give the reported reason
-   and source URL, and ask for another accessible URL or pasted text. Do not
+   says succeeded. Say that you could not read the page, give the error code,
+   stage, source URL, and browser error when present. Do not pick one cause
+   from a list of possible network causes without evidence. Ask for another
+   accessible URL or pasted text. Do not
    summarize from memory, the URL, the title alone, or an earlier tool result.
 4. On success, use only the returned excerpt to answer the user's question or
    explain the main points in 2–4 short, complete sentences in the user's
