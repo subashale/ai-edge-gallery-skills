@@ -1,3 +1,36 @@
+# Voice mystery — new Gallery skill
+
+Choose from **five fixed mysteries**, each with three suspects, four locations,
+evidence, three hints and a final accusation:
+
+1. The Missing Midnight Watch — a dinner-party theft.
+2. The Vanishing Recipe — a bakery contest mystery.
+3. The False Star Signal — an altered observatory result.
+4. The Silent Premiere — theatre sound sabotage.
+5. The Switched Envelope — a document swap aboard a train.
+
+Say “Show me the cases”, then choose by number/title, or say “Surprise me”.
+Selection happens in the Gallery chat using text or voice; no native menu is added.
+The runner randomly selects a case, excluding the current case when its notebook
+is supplied. There is no stored completion history, so earlier cases can repeat.
+During play, say “Question Ada”, “Inspect the coat”, or “Show my notebook”.
+Replies are kept short for Gallery's existing read-aloud feature; text also works.
+No audio recording or playback API is added by the skill.
+
+The runner controls evidence and the solution. Each call receives the previous
+notebook state from the model; no WebView storage or network is used. Losing
+that chat state requires an explicit restart. The runner checks the accused
+suspect and required evidence, not the meaning of the player's reasoning.
+Model narration, state forwarding and voice use still need iPhone validation.
+
+After publishing the source upload, install from:
+`https://subashale.github.io/ai-edge-gallery-skills/skills/voice-mystery/`
+
+For local import, extract `dist/voice-mystery.zip`; the phone picker's accepted
+format remains unverified. Replaying a selected case uses the same answer. Version 0.2.0 adds case choice
+and random selection; replace both skill files and start a fresh chat.
+Nothing has been deployed by the packaging command.
+
 # AI Edge Gallery skills — Read and explain + Key details extractor
 
 
@@ -38,7 +71,7 @@ installation, skill selection and model extraction quality still need validation
 desktop tests verify the reader, not Gemma's final answers. See the extractor
 checks in [IOS-VALIDATION.md](docs/IOS-VALIDATION.md).
 
-This repository contains two **Google AI Edge Gallery Agent Skills**, plus local
+This repository contains three **Google AI Edge Gallery Agent Skills**, plus local
 source, tests, and validation notes. The original reader skill is
 [`skills/read-and-explain`](skills/read-and-explain): `SKILL.md` and
 `scripts/index.html`. The HTML is Gallery's hidden logic runner.
@@ -81,7 +114,7 @@ proof of iOS support and no longer describe the current feature set.
 
 ## Upload and install
 
-The [upload list](docs/UPLOAD-FILES.md) contains the same 19 source files.
+The [upload list](docs/UPLOAD-FILES.md) contains the same 22 source files.
 Keep `.nojekyll` at the repository root and publish GitHub Pages from
 **main → /(root)**. Extract the upload ZIP into a fresh folder and upload its
 contents, preserving `skills/read-and-explain/`.
@@ -186,7 +219,7 @@ git clone --depth 1 https://github.com/google-ai-edge/gallery.git upstream/galle
 The original inspected commit is recorded in the upstream notes. A fresh clone
 may be newer; record its commit when comparing results.
 
-Packaging writes `dist/read-and-explain.zip`, `dist/key-details-extractor.zip`, the complete source upload ZIP
+Packaging writes `dist/read-and-explain.zip`, `dist/key-details-extractor.zip`, `dist/voice-mystery.zip`, the complete source upload ZIP
 `dist/ai-edge-gallery-skills-upload.zip`, `dist/UPLOAD-FILES.txt`, and
 `dist/SHA256SUMS`. The upload archive excludes `upstream/`, `node_modules/`,
 `test-results/`, build output, and macOS metadata. Curated findings stay in

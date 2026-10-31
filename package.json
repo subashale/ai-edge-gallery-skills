@@ -6,7 +6,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "node --test tests/reader.test.mjs",
+    "test": "node --test tests/reader.test.mjs tests/mystery.test.mjs",
     "test:live": "node tests/live.mjs",
     "package": "python3 tools/package_skill.py"
   },

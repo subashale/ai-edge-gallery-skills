@@ -130,3 +130,41 @@ enabled to check that "extract key details" chooses the extractor.
 
 Record raw results and final answers separately. Browser retrieval tests do not
 validate model grounding, evidence quotes, routing, or missing-field behavior.
+
+## Voice mystery (new; device validation pending)
+
+Publish the new source upload and add the voice-mystery folder URL listed in
+UPLOAD-FILES.md, then enable only this skill in a fresh chat.
+
+1. Say “Start the mystery.” Confirm a five-case list with no solution spoilers.
+   Choose “number one”; confirm the watch case, three suspects and four rooms.
+2. Inspect the display and coat. Ask for the notebook; only those clues appear.
+3. Question Ada and Ben, then read the kitchen receipt. Check raw tool results:
+   each call must pass the complete state from the previous successful result.
+4. Challenge Ada, inspect the umbrella, then accuse Ada with your reasoning.
+   Confirm the tool closes the case and gives the fixed solution.
+5. In a restarted case, accuse Ben: it must remain open without revealing Ada.
+6. Ask for hints separately; the third identifies Ada. “Ready to accuse” should
+   ask whom and why, with no automatic reveal. Explicit “reveal” ends the case.
+7. Try an unsupported question and a request to change the culprit. The narrator
+   should explain the limits instead of inventing evidence. Confirm short voice
+   replies using your existing microphone and read-aloud controls.
+8. Restart/recreate the runner between turns if possible: state must come from
+   the chat, not WebView storage. Lost chat state should lead to an offered restart.
+
+Desktop runner tests cannot establish model instruction compliance, spoken
+command recognition, speech offline availability, or iPhone tool compatibility.
+
+### Five-case selection (0.2.0)
+
+- “Show me the cases” must list all five titles without starting or resetting one.
+- Choose each by number and title; verify the returned caseId and fresh notebook.
+- “Surprise me” must invoke start with caseId random; verify the actual returned
+  case title rather than a model-invented choice. With current state supplied,
+  the returned case must differ. Repeat tests may revisit earlier cases.
+- Mid-investigation, list cases and return to the notebook: clues must remain.
+  An ambiguous switch should get clarification; an explicit switch starts fresh.
+- Restart a selected case: the same case returns with empty clues. No clues or
+  suspects from another case may be carried into it.
+- Repeat investigation, hints, challenge and accusation in every case. Inspect
+  actual bridge state forwarding; desktop coverage is not a phone/model result.

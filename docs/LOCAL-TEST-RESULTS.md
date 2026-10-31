@@ -267,3 +267,27 @@ browser console messages identifying missing CORS allow-origin headers.
 The local-only record is `test-results/rss-search-feasibility.json`. The
 existing reader still rejects RSS content types; no RSS/search implementation
 or hosting change was made.
+
+## Voice mystery — 2026-10-31
+
+`npm test`: 52 passed, zero failed (45 existing reader tests and 7 mystery tests).
+Chrome and local HTTPS fixtures required running outside the restricted sandbox;
+the first sandbox attempt could not launch Chrome or bind the fixture server.
+Mystery coverage includes explicit notebook forwarding across fresh VM instances,
+clue deduplication, gated confession/recovery, full solve, wrong/early accusations,
+progressive hints, reveal/restart, malformed input, and a real browser bridge call
+with storage getters and fetch disabled. No live model or iPhone test was run.
+`npm run package` builds three standalone payloads and the 22-file upload archive.
+
+## Five-case expansion — 2026-10-31
+
+Version 0.2.0: `npm test` passed all 59 tests (45 reader, 14 mystery), after
+rerunning outside the sandbox so Chrome and local HTTPS fixtures could start.
+New checks cover a spoiler-free five-case catalogue, explicit selection, every
+random-selection interval, exclusion of the supplied current case, all four new
+investigations from start through recovery/accusation, notebook preservation on
+listing, and rejection of foreign clues, objects, suspects and mismatched case IDs.
+Random-selection tests control the random value to verify all choices without
+flaky sampling. No generated cases, saved completion history or native app menu
+are implemented. Voice selection, model routing and all five cases on the iPhone
+remain unvalidated. Packaging remains a 22-file source upload plus three skills.

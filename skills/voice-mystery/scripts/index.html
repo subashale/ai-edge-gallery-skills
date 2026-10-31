@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>Voice mystery</title>
+</head>
+<body><script>
+"use strict";
+(() => {
+  const CASES = [
+{ id: "midnight-watch-v1", title: "The Missing Midnight Watch", teaser: "A dinner-party theft and a torn blue cuff.", culprit: "ada", suspects: ["ada", "ben", "clara"], required: ["case", "coat", "receipt", "ben", "ada"], challengeRequired: ["coat", "receipt", "ben", "ada"], recovery: { object: "umbrella", clue: "watch", before: "Several ordinary umbrellas stand in the hall. You do not yet have a lead pointing to a hiding place." }, hints: ["Check the study display, then compare it with what is hanging in the hall.", "Test Ada's kitchen alibi against Ben's statement and the signed receipt.", "The matching blue cuff and false alibi point to Ada. Challenge her after collecting those clues and her statement."],clues: {
+    case: "The study display latch is scratched. A square of blue wool is caught in it. The watch is missing.",
+    window: "The study window is latched from inside. Dust on its sill is undisturbed.",
+    receipt: "A delivery receipt in the kitchen, signed by Ben and the courier, records 8:09 to 8:14 p.m.",
+    photo: "An instant photo on the dining-room table shows Clara beside the host at 8:12 p.m. The wall clock is visible.",
+    coat: "Ada's blue wool coat hangs in the hall. Its right cuff has a fresh square tear matching the wool in the latch. An empty watch-shaped velvet pouch is in its pocket.",
+    ada: "Ada says: 'I was alone in the kitchen from 8:05 until 8:15. I never entered the study.' She brought a blue wool coat and collects antique watches.",
+    ben: "Ben says: 'I signed for the dessert delivery in the kitchen from 8:09 until 8:14. Ada was not there.' He wears a black cotton jacket.",
+    clara: "Clara says: 'At 8:12 I was posing for a photo with the host in the dining room. Earlier, I saw Ada leave her blue coat in the hall.' Clara wears a green silk dress.",
+    challenge: "Confronted with the matching torn cuff and her false kitchen alibi, Ada admits entering the study at 8:12. She says she hid the watch in the hollow umbrella handle in the hall.",
+    watch: "Inside the hollow umbrella handle is the missing watch. Its engraved serial number matches the host's record."
+  },
+locations: {
+    study: { description: "A display case stands beside a closed window.", objects: ["case", "window"] },
+    kitchen: { description: "Dessert boxes sit beside a signed delivery receipt.", objects: ["receipt"] },
+    "dining room": { description: "An instant photograph lies on the dining-room table.", objects: ["photo"] },
+    hall: { description: "Ada's blue coat hangs beside an umbrella stand.", objects: ["coat", "umbrella"] }
+  },
+opening: "The Missing Midnight Watch. At a dinner party, the host showed everyone his antique watch at 8:10 p.m. He stepped into the dining room; at 8:15 he returned to find it missing. The study clock's chime sensor logged the display opening at 8:12. Only guests Ada, Ben, and Clara could enter the study during those five minutes. Find who took the watch and explain the evidence. Where will you investigate first?",
+solution: "Ada stole the watch at 8:12, using her coat cuff to grip the display latch, and hid it in the hall umbrella's hollow handle. The matching torn wool ties her to the case; Ben's signed delivery receipt and statement contradict her kitchen alibi. Clara's photo places her with the host. Ada wanted the watch for her collection. The motive is revealed by the solution; the physical evidence and false alibi are sufficient to solve the case."},
+{
+  "id": "vanishing-recipe-v1",
+  "title": "The Vanishing Recipe",
+  "teaser": "A bakery contest, a missing recipe, and a floury trail.",
+  "culprit": "milo",
+  "suspects": [
+    "iris",
+    "milo",
+    "nora"
+  ],
+  "clues": {
+    "board": "The contest recipe has been removed from the office noticeboard. A fresh line of distinctive violet icing crosses the lower edge of the empty clip.",
+    "apron": "Milo's apron, hanging in the pantry, has a wet violet icing stain at the height of the noticeboard clip. Iris uses white icing; Nora uses green.",
+    "log": "The oven room has a continuous time-stamped safety video. From 6:00 to 6:10 a.m. it shows Iris at the ovens and Nora weighing flour. Milo never appears.",
+    "wrapper": "A clean paper wrapper on the packing bench has no recipe inside.",
+    "iris": "Iris says: 'Nora and I stayed in the oven room from six until ten past. Milo went toward the office just after six.'",
+    "milo": "Milo says: 'I was in the oven room with Iris the entire time, from six until ten past. I did not touch the noticeboard.' He is making violet-iced buns for the contest.",
+    "nora": "Nora says: 'I weighed flour beside Iris. Milo was not with us. He asked yesterday whether the winning recipe could be sold.'",
+    "challenge": "Confronted with the icing transfer and the video contradicting his alibi, Milo admits taking the recipe. He says it is folded under the pantry sugar tin.",
+    "recipe": "Under the sugar tin is the original handwritten recipe, with the baker’s signature."
+  },
+  "locations": {
+    "office": {
+      "description": "An empty noticeboard clip hangs above a desk.",
+      "objects": [
+        "board"
+      ]
+    },
+    "pantry": {
+      "description": "An apron hangs beside a shelf of sugar tins.",
+      "objects": [
+        "apron",
+        "tin"
+      ]
+    },
+    "oven room": {
+      "description": "A safety camera console displays the morning recording.",
+      "objects": [
+        "log"
+      ]
+    },
+    "packing bench": {
+      "description": "A paper wrapper lies on the packing bench.",
+      "objects": [
+        "wrapper"
+      ]
+    }
+  },
+  "opening": "The Vanishing Recipe. At 6:00 a.m. the head baker pinned up a contest recipe. At 6:10 it was gone. Only Iris, Milo, and Nora were in the bakery. Find who took it and recover it.",
+  "solution": "Milo stole the recipe shortly after 6:00 to sell it. Violet icing from his apron transferred to the clip; the continuous oven-room video disproves his claimed alibi. He hid the recipe under the pantry sugar tin. Iris and Nora were together on the recording.",
+  "required": [
+    "board",
+    "apron",
+    "log",
+    "milo",
+    "iris"
+  ],
+  "challengeRequired": [
+    "board",
+    "apron",
+    "log",
+    "milo"
+  ],
+  "recovery": {
+    "object": "tin",
+    "clue": "recipe",
+    "before": "The pantry contains several closed ingredient tins. No discovered clue yet singles out one as a hiding place."
+  },
+  "hints": [
+    "Compare the noticeboard clip with the aprons.",
+    "Check the continuous oven-room recording against Milo’s statement.",
+    "Milo’s violet icing and false alibi point to him. Collect the board, apron, video log and his statement, then challenge him."
+  ]
+},
+{
+  "id": "observatory-signal-v1",
+  "title": "The False Star Signal",
+  "teaser": "An observatory discovery that may be too good to be true.",
+  "culprit": "sana",
+  "suspects": [
+    "owen",
+    "priya",
+    "sana"
+  ],
+  "clues": {
+    "chart": "The discovery chart contains a bright signal absent from the sealed raw telescope printout beside it. The added mark is orange pencil, not printer ink.",
+    "pencil": "Sana’s numbered orange drafting pencil has a chipped tip. A flake at the chart margin fits the chip. The telescope printer uses black ink only.",
+    "access": "The control-room door log records Sana entering alone at 11:02 p.m. and leaving at 11:06. Owen and Priya did not enter between 11:00 and 11:10.",
+    "weather": "The terrace weather gauge shows clear skies throughout the observation.",
+    "owen": "Owen says: 'Priya and I were on the terrace from eleven until ten past. We compared the black-ink raw printout before Sana carried it away.'",
+    "priya": "Priya says: 'Owen and I stayed together. Sana wanted tonight’s discovery announcement to go ahead even if no signal appeared.'",
+    "sana": "Sana says: 'I stayed in the archive from eleven until ten past. I never entered the control room or touched the chart.'",
+    "challenge": "Confronted with the door log and the matching chipped pencil, Sana admits drawing the false signal. She says her practice chart is rolled inside the archive map tube.",
+    "draft": "The map tube contains a practice chart with the same false signal and Sana’s handwritten note: “Use for announcement.”"
+  },
+  "locations": {
+    "control room": {
+      "description": "The discovery chart and sealed raw printout lie beside a door-log terminal.",
+      "objects": [
+        "chart",
+        "access"
+      ]
+    },
+    "workroom": {
+      "description": "Numbered drafting pencils are stored on the workbench.",
+      "objects": [
+        "pencil"
+      ]
+    },
+    "terrace": {
+      "description": "A weather gauge stands beside the telescope.",
+      "objects": [
+        "weather"
+      ]
+    },
+    "archive": {
+      "description": "Shelves hold a large map tube.",
+      "objects": [
+        "tube"
+      ]
+    }
+  },
+  "opening": "The False Star Signal. At 11:00 p.m. an observatory produced a raw telescope printout. At 11:10 a chart claimed a new signal. Only Owen, Priya, and Sana handled the results that night. Find whether the discovery was altered and by whom.",
+  "solution": "Sana drew a false orange signal between 11:02 and 11:06 to secure a discovery announcement. The raw printout has no signal, the matching pencil chip ties her to the mark, and the door log contradicts her archive alibi. Her practice chart was hidden in the archive map tube. Owen and Priya stayed on the terrace.",
+  "required": [
+    "chart",
+    "pencil",
+    "access",
+    "sana",
+    "owen"
+  ],
+  "challengeRequired": [
+    "chart",
+    "pencil",
+    "access",
+    "sana"
+  ],
+  "recovery": {
+    "object": "tube",
+    "clue": "draft",
+    "before": "A map tube stands among the archive materials. You have no discovered lead to a particular hidden document yet."
+  },
+  "hints": [
+    "Compare the discovery chart with the raw printout.",
+    "Find what made the orange mark, then check the control-room door log.",
+    "Sana’s chipped pencil and false archive alibi identify her. Gather the chart, pencil, access log and her statement, then challenge her."
+  ]
+},
+{
+  "id": "silent-premiere-v1",
+  "title": "The Silent Premiere",
+  "teaser": "A theatre’s opening-night sound goes silent.",
+  "culprit": "theo",
+  "suspects": [
+    "lena",
+    "theo",
+    "victor"
+  ],
+  "clues": {
+    "console": "The sound console’s diagnostic log shows the master output manually muted at 7:42 p.m. No equipment fault is recorded. The physical mute button has a streak of silver stage paint.",
+    "glove": "Theo’s work glove in the props room has wet silver stage paint and a round clean patch the size of the mute button. Lena and Victor have no painted gloves.",
+    "recording": "An unbroken rehearsal recording shows Lena and Victor together onstage from 7:40 to 7:45. Theo is absent throughout.",
+    "cable": "The cable at the stage entrance is firmly connected and passes its continuity check.",
+    "lena": "Lena says: 'Victor and I rehearsed onstage from 7:40 until 7:45. Theo left us before 7:40.'",
+    "victor": "Victor says: 'I stayed onstage with Lena. Theo was angry that tonight’s lead role had gone to me.'",
+    "theo": "Theo says: 'I was onstage with Lena at 7:42. I never went near the sound booth.' He painted the silver scenery earlier.",
+    "challenge": "Confronted with the painted button, glove and rehearsal recording, Theo admits muting the sound. He says he hid his written plan in the props room promptbook.",
+    "plan": "Inside the promptbook is Theo’s signed note: “7:42 — mute the master, make Victor miss his cue.”"
+  },
+  "locations": {
+    "sound booth": {
+      "description": "The console shows a diagnostic log beside its master mute button.",
+      "objects": [
+        "console"
+      ]
+    },
+    "props room": {
+      "description": "A work glove and a closed promptbook sit among the props.",
+      "objects": [
+        "glove",
+        "promptbook"
+      ]
+    },
+    "auditorium": {
+      "description": "A rehearsal recording is available on the review monitor.",
+      "objects": [
+        "recording"
+      ]
+    },
+    "stage entrance": {
+      "description": "A sound cable runs along the wall.",
+      "objects": [
+        "cable"
+      ]
+    }
+  },
+  "opening": "The Silent Premiere. During a theatre rehearsal, every speaker went silent at 7:42 p.m. Sound returned when the operator checked the console. Only Lena, Theo, and Victor could reach the booth. Investigate whether this was an accident or sabotage.",
+  "solution": "Theo deliberately muted the master output at 7:42 to spoil Victor’s cue after losing the lead role. Silver paint transferred from his glove to the button. The continuous rehearsal recording contradicts his onstage alibi and places Lena and Victor together. Theo hid his written plan in the props room promptbook.",
+  "required": [
+    "console",
+    "glove",
+    "recording",
+    "theo",
+    "lena"
+  ],
+  "challengeRequired": [
+    "console",
+    "glove",
+    "recording",
+    "theo"
+  ],
+  "recovery": {
+    "object": "promptbook",
+    "clue": "plan",
+    "before": "The promptbook is among many theatre papers. You have no discovered lead to a hidden plan yet."
+  },
+  "hints": [
+    "Check whether the console logged a fault or a manual action.",
+    "Compare the mute button with the glove and check the rehearsal recording.",
+    "Theo’s paint and false onstage alibi point to sabotage. Collect the console, glove, recording and his statement, then challenge him."
+  ]
+},
+{
+  "id": "switched-envelope-v1",
+  "title": "The Switched Envelope",
+  "teaser": "A train journey and a document that changed carriages.",
+  "culprit": "ruth",
+  "suspects": [
+    "eli",
+    "ruth",
+    "zoe"
+  ],
+  "clues": {
+    "envelope": "The courier’s envelope in the compartment contains blank paper. Its seal was lifted and reclosed with a strip of green repair tape.",
+    "tape": "Ruth’s labelled repair kit in the luggage rack contains green tape. Its torn end fits the jagged edge of the strip on the envelope.",
+    "booking": "The dining-car attendant’s continuous service video shows Eli and Zoe at their table from 2:00 to 2:10 p.m. Ruth does not enter the dining car during that interval.",
+    "lock": "The compartment door lock is intact. Only the courier and guests Eli, Ruth, and Zoe had keys; the courier stayed with the guard between 2:00 and 2:10.",
+    "eli": "Eli says: 'Zoe and I were having tea in the dining car from two until ten past. Ruth was not at our table.'",
+    "ruth": "Ruth says: 'I was in the dining car with Eli for those whole ten minutes. I never touched the courier’s envelope.'",
+    "zoe": "Zoe says: 'I stayed with Eli. Earlier Ruth offered to buy the document from the courier, who refused.'",
+    "challenge": "Confronted with the matching tape and dining-car video, Ruth admits swapping the document for blank paper. She says the original is behind the route card in the vestibule.",
+    "document": "Behind the route card is the original signed railway deed, matching the courier’s inventory."
+  },
+  "locations": {
+    "compartment": {
+      "description": "The courier’s envelope lies beside an intact door lock.",
+      "objects": [
+        "envelope",
+        "lock"
+      ]
+    },
+    "luggage rack": {
+      "description": "A labelled repair kit is tucked between suitcases.",
+      "objects": [
+        "tape"
+      ]
+    },
+    "dining car": {
+      "description": "The attendant can show the continuous service recording.",
+      "objects": [
+        "booking"
+      ]
+    },
+    "vestibule": {
+      "description": "A framed route card hangs by the carriage door.",
+      "objects": [
+        "route card"
+      ]
+    }
+  },
+  "opening": "The Switched Envelope. At 2:00 p.m. a courier checked a signed railway deed in his compartment. At 2:10, after visiting the guard, he returned to find blank paper in its envelope. Eli, Ruth, and Zoe were the only guests with keys. Find who made the swap.",
+  "solution": "Ruth swapped the deed for blank paper between 2:00 and 2:10 because she wanted the document the courier would not sell. The matching jagged green tape ties her repair kit to the resealed envelope, while the continuous dining-car video disproves her alibi and places Eli and Zoe together. She hid the deed behind the vestibule route card.",
+  "required": [
+    "envelope",
+    "tape",
+    "booking",
+    "ruth",
+    "eli"
+  ],
+  "challengeRequired": [
+    "envelope",
+    "tape",
+    "booking",
+    "ruth"
+  ],
+  "recovery": {
+    "object": "route card",
+    "clue": "document",
+    "before": "The framed route card displays the next stops. No discovered clue yet points to anything concealed behind it."
+  },
+  "hints": [
+    "Inspect how the envelope was resealed.",
+    "Match the torn tape and test Ruth’s dining-car alibi.",
+    "Ruth’s tape and false alibi identify her. Gather the envelope, tape, service video and her statement, then challenge her."
+  ]
+}
+  ];
+
+  const VERSION = "0.2.0";
+  function fail(message) { throw new Error(message); }
+  function findCase(id) { return CASES.find(c => c.id === id); }
+  function initial(c) { return { caseId: c.id, found: [], hints: 0, ended: false }; }
+  function validate(s) {
+    const c = s && findCase(s.caseId);
+    if (!c || !Array.isArray(s.found) || s.found.length > Object.keys(c.clues).length ||
+        s.found.some(k => !Object.hasOwn(c.clues, k)) || new Set(s.found).size !== s.found.length ||
+        !Number.isInteger(s.hints) || s.hints < 0 || s.hints > 3 || typeof s.ended !== "boolean" ||
+        (s.found.includes("challenge") && !c.challengeRequired.every(k => s.found.includes(k))) ||
+        (s.found.includes(c.recovery.clue) && !s.found.includes("challenge"))) fail("Invalid notebook. Pass the exact state from the last successful result, or explicitly start a new case.");
+    return { caseId: c.id, found: [...s.found], hints: s.hints, ended: s.ended };
+  }
+  function catalogue(state) {
+    return { version: VERSION, narration: "Choose a case by number or title, or say Surprise me. Each case has three suspects and four locations.",
+      cases: CASES.map((c, i) => ({ number: i + 1, caseId: c.id, title: c.title, teaser: c.teaser })),
+      ...(state ? { state } : {}) };
+  }
+  window.ai_edge_gallery_get_result = input => {
+    try {
+      if (typeof input !== "string" || input.length > 12000) fail("Supply a JSON string under 12000 characters.");
+      const data = JSON.parse(input);
+      if (!data || typeof data !== "object" || Array.isArray(data)) fail("Supply an action object.");
+      const actions = ["cases", "start", "look", "inspect", "talk", "notebook", "hint", "accuse", "reveal"];
+      if (!actions.includes(data.action)) fail("Unknown action. Use cases, start, look, inspect, talk, notebook, hint, accuse, or reveal.");
+      if (data.action === "cases" || (data.action === "start" && data.caseId === undefined)) {
+        return JSON.stringify({ result: JSON.stringify(catalogue(data.state === undefined ? undefined : validate(data.state))) });
+      }
+      let s;
+      if (data.action === "start") {
+        let c;
+        if (data.caseId === "random") {
+          const previous = data.state === undefined ? undefined : validate(data.state);
+          const choices = CASES.filter(c => c.id !== previous?.caseId);
+          c = choices[Math.floor(Math.random() * choices.length)];
+        } else c = findCase(data.caseId);
+        if (!c) fail("Unknown case. Use cases to get the available case IDs.");
+        s = initial(c);
+      } else {
+        s = validate(data.state);
+        if (data.caseId !== undefined && data.caseId !== s.caseId) fail("Case does not match the notebook. Start explicitly to switch cases.");
+      }
+      const c = findCase(s.caseId);
+      const has = keys => keys.every(k => s.found.includes(k));
+      const objects = Object.values(c.locations).flatMap(room => room.objects);
+      const discover = key => { if (!s.found.includes(key)) s.found.push(key); return c.clues[key]; };
+      let narration;
+      if (s.ended && !["notebook", "start"].includes(data.action)) fail("This case has ended. Review your notebook, choose another case, or explicitly restart.");
+      switch (data.action) {
+        case "start": narration = c.opening; break;
+        case "look": {
+          if (!Object.hasOwn(c.locations, data.target)) fail(`Choose a location: ${Object.keys(c.locations).join(", ")}.`);
+          const location = c.locations[data.target];
+          narration = `${location.description} You can inspect: ${location.objects.join(", ")}.`; break;
+        }
+        case "inspect": {
+          if (!objects.includes(data.target)) fail(`Inspect: ${objects.join(", ")}.`);
+          narration = data.target === c.recovery.object ?
+            (s.found.includes("challenge") ? discover(c.recovery.clue) : c.recovery.before) : discover(data.target);
+          break;
+        }
+        case "talk": {
+          if (!c.suspects.includes(data.target)) fail(`Choose a suspect: ${c.suspects.join(", ")}.`);
+          if (data.topic !== undefined && !["alibi", "challenge"].includes(data.topic)) fail("Use topic alibi or challenge.");
+          if (data.topic === "challenge") {
+            narration = data.target === c.culprit && has(c.challengeRequired) ? discover("challenge") : "You need a specific contradiction supported by discovered evidence. Review the objects and statements before confronting a suspect.";
+          } else narration = discover(data.target);
+          break;
+        }
+        case "notebook": narration = "Your discovered evidence is listed in notebook. Undiscovered facts are not included."; break;
+        case "hint": narration = c.hints[Math.min(s.hints, 2)]; s.hints = Math.min(3, s.hints + 1); break;
+        case "accuse": {
+          if (!c.suspects.includes(data.target)) fail(`Choose a suspect: ${c.suspects.join(", ")}.`);
+          if (typeof data.reason !== "string" || !data.reason.trim() || data.reason.length > 1000) fail("Include your theory in reason (1–1000 characters).");
+          if (data.target !== c.culprit) narration = "That accusation does not fit the evidence. Keep investigating; your case remains open.";
+          else if (!has(c.required)) narration = "Before closing the case, gather the physical evidence and check the suspect statements against the time record so you can support your accusation.";
+          else { s.ended = true; narration = `Case solved. ${c.solution} Your theory was recorded, but its wording was not automatically graded.`; }
+          break;
+        }
+        case "reveal": s.ended = true; narration = `Solution revealed. ${c.solution}`; break;
+      }
+      return JSON.stringify({ result: JSON.stringify({ version: VERSION, title: c.title, narration, state: s,
+        notebook: s.found.map(id => ({ id, evidence: c.clues[id] })), locations: Object.keys(c.locations), suspects: c.suspects }) });
+    } catch (error) { return JSON.stringify({ error: `Voice mystery: ${error.message}` }); }
+  };
+})();
+</script></body></html>
