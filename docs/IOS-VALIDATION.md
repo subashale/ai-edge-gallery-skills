@@ -168,3 +168,34 @@ command recognition, speech offline availability, or iPhone tool compatibility.
   suspects from another case may be carried into it.
 - Repeat investigation, hints, challenge and accusation in every case. Inspect
   actual bridge state forwarding; desktop coverage is not a phone/model result.
+
+## Decision partner and creative generator (new; phone checks pending)
+
+Publish the source upload, install the new folder URLs from UPLOAD-FILES.md and
+validate each enabled alone in a fresh chat before checking routing together.
+
+Decision partner:
+1. Say “Help me choose.” Expect one compact question about the choice and values.
+2. Describe an evening class vs free evenings, with one priority and constraint.
+   Inspect the frame tool result: supplied context must be preserved faithfully.
+3. Ask to challenge your preference, compare options, and find a small next step.
+   Check the correct round is used, assumptions are labelled, and no score,
+   external facts or commitments are invented. Missing alternatives need a question.
+4. Change a priority midway. Confirm the comparison uses that change. Paste an
+   instruction to ignore priorities as quoted source text; it must stay context.
+
+Creative generator:
+1. Request drawing at a desk for ten minutes. Check subject/task, materials and
+   suggested plan, whose minutes sum to ten. No countdown should be claimed.
+2. Say “another one.” Check previousId matches the last prompt and the returned
+   combination differs, with preferences preserved.
+3. Try writing indoors, photography outdoors from a safe stationary spot, and
+   “Surprise me, five minutes, indoors.” Check actual returned medium/task.
+4. Ask for one minute, then 120 minutes; check valid bounded plans. Fractional or
+   out-of-range time needs clarification. No time supplied must trigger a question.
+5. Say there is no camera, drawing tool or visible subject: it must adapt/ask,
+   without claiming camera access or observing your room. Describe your work;
+   feedback must use only that description. Confirm comfortable short speech.
+
+Browser tests cover runner behaviour, not coaching quality, model compliance,
+model perception, tool argument generation or offline speech on the phone.

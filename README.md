@@ -1,3 +1,32 @@
+# Decision partner and creative challenges — two new Gallery skills
+
+**Decision sparring partner** helps frame a choice, test assumptions, compare
+tradeoffs against your priorities, and plan a small reversible experiment.
+Try: “Help me decide whether to take an evening class or keep my evenings free.”
+It asks one question at a time. The runner supplies a worksheet; the on-device
+model reasons about it. No automatic scoring, verified external facts or actions.
+
+**Creative challenge generator** provides a drawing, photography or writing
+challenge for your time, setting and difficulty. Try: “Give me a gentle 10-minute
+drawing challenge at my desk,” or “Surprise me, five minutes, indoors.” Say
+“another one” for another combination. It uses bounded templates and random
+selection; older prompts may repeat. Suggested time plans are not running timers.
+There is no camera/location access or image generation. You make the work.
+
+Both skills use chat context without runner storage or network access. Gallery's
+existing microphone and read-aloud can be used; their offline availability is not
+verified. Phone installation, routing, coaching quality and spoken interaction
+still need device validation.
+
+After publishing the updated source upload, install these separate folder URLs:
+- `https://subashale.github.io/ai-edge-gallery-skills/skills/decision-sparring-partner/`
+- `https://subashale.github.io/ai-edge-gallery-skills/skills/creative-challenge-generator/`
+
+Standalone payloads: `dist/decision-sparring-partner.zip` and
+`dist/creative-challenge-generator.zip`. Extract before local import if your
+picker accepts skill folders; its accepted format remains unverified. The complete
+source upload now has 27 files and all five skills. Nothing has been published.
+
 # Voice mystery — new Gallery skill
 
 Choose from **five fixed mysteries**, each with three suspects, four locations,
@@ -71,7 +100,7 @@ installation, skill selection and model extraction quality still need validation
 desktop tests verify the reader, not Gemma's final answers. See the extractor
 checks in [IOS-VALIDATION.md](docs/IOS-VALIDATION.md).
 
-This repository contains three **Google AI Edge Gallery Agent Skills**, plus local
+This repository contains five **Google AI Edge Gallery Agent Skills**, plus local
 source, tests, and validation notes. The original reader skill is
 [`skills/read-and-explain`](skills/read-and-explain): `SKILL.md` and
 `scripts/index.html`. The HTML is Gallery's hidden logic runner.
@@ -114,7 +143,7 @@ proof of iOS support and no longer describe the current feature set.
 
 ## Upload and install
 
-The [upload list](docs/UPLOAD-FILES.md) contains the same 22 source files.
+The [upload list](docs/UPLOAD-FILES.md) contains the same 27 source files.
 Keep `.nojekyll` at the repository root and publish GitHub Pages from
 **main → /(root)**. Extract the upload ZIP into a fresh folder and upload its
 contents, preserving `skills/read-and-explain/`.

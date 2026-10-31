@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>Decision sparring partner</title></head><body><script>
+"use strict";
+(() => {
+  const rounds = {
+    frame: ["What outcome matters most?", "What constraints are truly fixed?", "Is there a third option, including delaying or trying a smaller step?"],
+    challenge: ["What is the strongest case against your preferred option?", "Which assumption could reverse your choice if false?", "What evidence would change your mind?"],
+    compare: ["How does each option serve your stated priorities?", "What does each option cost or give up?", "Which downsides are reversible, and which remain unknown?"],
+    "next-step": ["What small reversible experiment would reduce the biggest uncertainty?", "What result would make you proceed or stop?", "When will you review what you learned?"]
+  };
+  function fail(message) { throw new Error(message); }
+  function str(value, name, max, required = false) {
+    if (value === undefined && !required) return "";
+    if (typeof value !== "string" || value.length > max || (required && !value.trim())) fail(`${name} must be ${required ? "nonempty " : ""}text up to ${max} characters.`);
+    return value.trim();
+  }
+  function list(value, name, maxItems, maxChars) {
+    if (value === undefined) return [];
+    if (!Array.isArray(value) || value.length > maxItems) fail(`${name} must be an array with at most ${maxItems} items.`);
+    const items = value.map(item => str(item, name, maxChars, true));
+    if (new Set(items.map(item => item.toLowerCase())).size !== items.length) fail(`${name} must contain distinct items.`);
+    return items;
+  }
+  window.ai_edge_gallery_get_result = input => {
+    try {
+      if (typeof input !== "string" || input.length > 12000) fail("Supply a JSON string under 12000 characters.");
+      const d = JSON.parse(input);
+      if (!d || typeof d !== "object" || Array.isArray(d)) fail("Supply a coaching request object.");
+      if (!Object.hasOwn(rounds, d.round)) fail("Choose round frame, challenge, compare, or next-step.");
+      const context = {
+        decision: str(d.decision, "decision", 2000, true),
+        options: list(d.options, "options", 5, 300),
+        priorities: list(d.priorities, "priorities", 5, 200),
+        constraints: str(d.constraints, "constraints", 1000),
+        preference: str(d.preference, "preference", 300)
+      };
+      if (d.round !== "frame" && context.options.length < 2) fail("Supply at least two options, or use frame to clarify the choice first.");
+      return JSON.stringify({ result: JSON.stringify({ version: "0.1.0", round: d.round, context,
+        prompts: rounds[d.round],
+        guidance: "Use only the supplied context as user facts. Label assumptions and unknowns. Ask one useful question at a time. This worksheet does not score options, verify facts, or make the decision." }) });
+    } catch (error) { return JSON.stringify({ error: `Decision partner: ${error.message}` }); }
+  };
+})();
+</script></body></html>

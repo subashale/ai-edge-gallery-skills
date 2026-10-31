@@ -1,6 +1,6 @@
 # Files to upload
 
-Use this source layout for `subashale/ai-edge-gallery-skills`. All 22 files are
+Use this source layout for `subashale/ai-edge-gallery-skills`. All 27 files are
 included in `dist/ai-edge-gallery-skills-upload.zip` after `npm run package`.
 Extract that ZIP into a fresh folder, then upload the contents of its
 `ai-edge-gallery-skills/` folder to the GitHub repository root.
@@ -18,6 +18,14 @@ docs/
   HOSTING-STATUS.md
   IOS-VALIDATION.md
 skills/
+  decision-sparring-partner/
+    SKILL.md
+    scripts/
+      index.html
+  creative-challenge-generator/
+    SKILL.md
+    scripts/
+      index.html
   voice-mystery/
     SKILL.md
     scripts/
@@ -36,6 +44,7 @@ tests/
   live.mjs
   reader.test.mjs
   mystery.test.mjs
+  companions.test.mjs
 tools/
   package_skill.py
 ```
@@ -69,7 +78,7 @@ For the new Key Details Extractor, also add this URL in Gallery after deployment
 `https://subashale.github.io/ai-edge-gallery-skills/skills/key-details-extractor/`
 
 Verify its `/SKILL.md` and `/scripts/index.html` endpoints. Both skills have
-standalone two-file ZIPs in `dist/`; the complete upload ZIP includes all three.
+standalone two-file ZIPs in `dist/`; the complete upload ZIP includes all five.
 The extractor is new and has not been deployed or validated on the iPhone.
 
 For Voice Mystery, after publishing add:
@@ -77,3 +86,12 @@ For Voice Mystery, after publishing add:
 Verify `/SKILL.md` and `/scripts/index.html`. Start a fresh chat, enable the skill,
 and say “Start the mystery.” `dist/voice-mystery.zip` is the standalone payload.
 The new mystery has not been deployed or validated on the iPhone.
+
+For the Decision Sparring Partner and Creative Challenge Generator, add these
+folder URLs after publishing (each has its own SKILL.md and scripts/index.html):
+
+- `https://subashale.github.io/ai-edge-gallery-skills/skills/decision-sparring-partner/`
+- `https://subashale.github.io/ai-edge-gallery-skills/skills/creative-challenge-generator/`
+
+Both also have standalone skill ZIPs in dist. Enable one in a fresh Gallery chat
+for initial validation. Neither new skill has been deployed or tested on iPhone.

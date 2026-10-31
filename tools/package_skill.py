@@ -4,7 +4,7 @@ from zipfile import ZipFile, ZIP_DEFLATED
 import hashlib
 
 ROOT = Path(__file__).resolve().parents[1]
-SKILLS = ("read-and-explain", "key-details-extractor", "voice-mystery")
+SKILLS = ("read-and-explain", "key-details-extractor", "voice-mystery", "decision-sparring-partner", "creative-challenge-generator")
 SKILL_FILES = tuple(f"skills/{name}/{file}" for name in SKILLS
                     for file in ("SKILL.md", "scripts/index.html"))
 UPLOAD_FILES = (
@@ -24,6 +24,7 @@ UPLOAD_FILES = (
     "tests/live.mjs",
     "tests/reader.test.mjs",
     "tests/mystery.test.mjs",
+    "tests/companions.test.mjs",
     "tools/package_skill.py",
 )
 

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>Creative challenge generator</title></head><body><script>
+"use strict";
+(() => {
+  const subjects = {
+    desk: ["one small object within easy reach", "two objects already on your desk", "a familiar tool or everyday item"],
+    indoors: ["an ordinary object in your room", "a corner of the room you can safely observe", "a texture on an object you own"],
+    outdoors: ["a natural shape visible from a safe stationary spot", "a shadow or pattern you can observe without moving", "a public-space detail without identifiable people"],
+    anywhere: ["an ordinary object nearby, or one you remember", "a familiar place from memory", "an imagined object with an unusual purpose"]
+  };
+  const tasks = {
+    drawing: ["Draw its outline, then add just three details that make it recognisable.", "Draw it twice: once as observed or remembered, once as a tiny imaginary building.", "Make a sketch using only lines and dots; use spacing to suggest light and shade."],
+    photography: ["Make three frames of the same subject using different crops from your current safe position.", "Make a pair of photos: one showing the whole subject and one showing a small detail.", "Make a photo where the subject sits near one edge, then another where it sits in the centre. Compare the feeling."],
+    writing: ["Write a short scene in which it matters to someone, without naming it until the last line.", "Write a first-person monologue from its point of view; include one small wish.", "Describe it twice: first as welcoming, then as mysterious. Change the words, not the facts."]
+  };
+  function fail(message) { throw new Error(message); }
+  window.ai_edge_gallery_get_result = input => {
+    try {
+      if (typeof input !== "string" || input.length > 4000) fail("Supply a JSON string under 4000 characters.");
+      const d = JSON.parse(input);
+      if (!d || typeof d !== "object" || Array.isArray(d)) fail("Supply a challenge request object.");
+      if (!["drawing", "photography", "writing", "surprise"].includes(d.medium)) fail("Choose drawing, photography, writing, or surprise.");
+      if (!Number.isInteger(d.minutes) || d.minutes < 1 || d.minutes > 120) fail("minutes must be a whole number from 1 to 120.");
+      if (!Object.hasOwn(subjects, d.setting)) fail("Choose setting desk, indoors, outdoors, or anywhere.");
+      const difficulty = d.difficulty === undefined ? "gentle" : d.difficulty;
+      if (!["gentle", "stretch"].includes(difficulty)) fail("Choose difficulty gentle or stretch.");
+      if (d.previousId !== undefined && (typeof d.previousId !== "string" || d.previousId.length > 100)) fail("previousId must be a prompt ID up to 100 characters.");
+      if ((d.medium === "photography" || d.medium === "surprise") && d.setting === "anywhere") fail("For photography or surprise, choose desk, indoors, or outdoors so a visible subject can be used. For memory-only play, choose drawing or writing.");
+      const media = d.medium === "surprise" ? Object.keys(tasks) : [d.medium];
+      const candidates = media.flatMap(medium => subjects[d.setting].flatMap((subject, subjectIndex) => tasks[medium].map((task, taskIndex) => ({
+        id: `${medium}-${d.setting}-${subjectIndex}-${taskIndex}`, medium, subject, task
+      })))).filter(c => c.id !== d.previousId);
+      const pick = candidates[Math.floor(Math.random() * candidates.length)];
+      const setup = Math.min(2, Math.floor(d.minutes / 5));
+      const review = d.minutes >= 3 ? 1 : 0;
+      const make = d.minutes - setup - review;
+      const constraint = difficulty === "stretch" ? ({ drawing: "Use your less-used hand or draw without lifting the pen; choose whichever is comfortable.", photography: "Use no filters and keep the camera in one safe position.", writing: "Use no adjectives; let actions and concrete nouns carry the mood." })[pick.medium] : "Aim for one rough attempt. Finishing matters more than polish.";
+      const materials = { drawing: "Paper and any drawing tool, or a drawing app.", photography: "A camera or phone camera. No upload is required.", writing: "Paper and pen, or any text editor." };
+      return JSON.stringify({ result: JSON.stringify({ version: "0.1.0", promptId: pick.id, medium: pick.medium, setting: d.setting, minutes: d.minutes, difficulty,
+        subject: pick.subject, challenge: pick.task, constraint, materials: materials[pick.medium],
+        plan: [{ step: "Choose your subject and get ready", minutes: setup }, { step: "Make your attempt", minutes: make }, { step: "Notice one detail you like and one to try differently", minutes: review }].filter(s => s.minutes > 0),
+        reflection: "What surprised you about the subject or your choices?",
+        guidance: "The time budget is a suggested plan, not a running timer. Use the surroundings the user describes; no camera, location or sensory access is provided. Stay in a safe accessible position and use objects you may handle or photograph." }) });
+    } catch (error) { return JSON.stringify({ error: `Creative challenge: ${error.message}` }); }
+  };
+})();
+</script></body></html>

@@ -291,3 +291,16 @@ Random-selection tests control the random value to verify all choices without
 flaky sampling. No generated cases, saved completion history or native app menu
 are implemented. Voice selection, model routing and all five cases on the iPhone
 remain unvalidated. Packaging remains a 22-file source upload plus three skills.
+
+## Decision partner and creative generator — 2026-10-31
+
+`npm test`: all 67 tests passed (45 reader, 14 mystery, 8 companion checks).
+Tests ran outside the sandbox to allow Chrome and local HTTPS fixture startup.
+New coverage validates decision rounds, preserved context, invalid/missing options,
+and treating pasted instructions as data. Creative checks cover all supported
+medium/setting combinations, each whole-minute time budget 1–120, invalid input,
+previous-prompt exclusion, and controlled random selection reaching every medium.
+Both new bridges were invoked in Chrome with storage getters and fetch disabled.
+This does not verify model prompt-injection resistance, coaching quality, voice
+recognition, speech playback, or phone tool routing. Those need device checks.
+Packaging now includes five standalone skill ZIPs and a 27-file source upload.
